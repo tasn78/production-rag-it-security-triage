@@ -33,3 +33,12 @@ Severity scoring
 Knowledge-base retrieval
     ↓
 Structured FastAPI response
+
+## Evaluation
+
+The project includes a labeled JSONL evaluation set and a local evaluation script.
+
+Run evaluation:
+
+```powershell
+python -m scripts.run_evaluation
