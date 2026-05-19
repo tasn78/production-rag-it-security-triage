@@ -15,7 +15,6 @@ from app.evaluation.evaluator import (
 from app.rag.retriever import KnowledgeBaseRetriever
 from app.triage.service import TriageService
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DOCS_DIRECTORY = PROJECT_ROOT / "data" / "docs"
 EVAL_SET_PATH = PROJECT_ROOT / "data" / "eval_set.jsonl"

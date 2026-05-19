@@ -10,7 +10,6 @@ from pathlib import Path
 
 from app.rag.retriever import KnowledgeBaseRetriever
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DOCS_DIRECTORY = PROJECT_ROOT / "data" / "docs"
 

@@ -9,7 +9,6 @@ Critical severity levels.
 from app.triage.classifier import normalize_ticket_text
 from app.triage.schemas import SeverityLevel, SeverityResult, TriageCategory
 
-
 HIGH_RISK_SECURITY_KEYWORDS = (
     "brute force",
     "password spraying",
@@ -99,8 +98,7 @@ def calculate_severity(
     if matched_high_risk_keywords:
         score += 3
         reasons.append(
-            "High-risk security indicators detected: "
-            + ", ".join(matched_high_risk_keywords)
+            "High-risk security indicators detected: " + ", ".join(matched_high_risk_keywords)
         )
 
     matched_multi_user_keywords = [

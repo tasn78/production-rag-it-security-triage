@@ -12,7 +12,6 @@ from typing import Protocol
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-
 DEFAULT_EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
 

@@ -10,8 +10,8 @@ from dataclasses import dataclass
 
 from app.rag.retriever import KnowledgeBaseRetriever, RetrievalResult
 from app.triage.classifier import classify_ticket
-from app.triage.severity import calculate_severity
 from app.triage.schemas import ClassificationResult, SeverityResult
+from app.triage.severity import calculate_severity
 
 
 @dataclass(frozen=True)

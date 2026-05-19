@@ -1,0 +1,29 @@
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # import sorting
+    "B",   # bugbear
+    "UP",  # pyupgrade
+    "D",   # docstring rules
+]
+ignore = [
+    "D100", # allow missing module docstring in some simple files
+    "D104", # allow missing package docstring in __init__.py
+    "D107", # allow missing docstring in __init__
+    "D200", # allow short docstrings to remain multi-line for consistency
+    "D212", # allow summary to start on the line after opening triple quotes
+    "UP042", # keep str, Enum for broad compatibility and readability
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

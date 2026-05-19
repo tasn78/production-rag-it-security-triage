@@ -64,7 +64,9 @@ def test_triage_service_returns_structured_security_result() -> None:
     service = TriageService(retriever=FakeRetriever())
 
     result = service.triage_ticket(
-        ticket_text="Repeated failed login attempts from an external IP indicate brute force activity.",
+        ticket_text=(
+            "Repeated failed login attempts from an external IP indicate brute force activity."
+        ),
         top_k=1,
     )
 

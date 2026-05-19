@@ -8,7 +8,6 @@ indexed, retrieved, and cited in triage responses.
 
 from dataclasses import dataclass
 
-
 DEFAULT_CHUNK_SIZE = 800
 DEFAULT_CHUNK_OVERLAP = 120
 

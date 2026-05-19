@@ -14,7 +14,6 @@ from pydantic import BaseModel, Field
 from app.rag.retriever import KnowledgeBaseRetriever
 from app.triage.service import TriageService
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DOCS_DIRECTORY = PROJECT_ROOT / "data" / "docs"
 

@@ -9,7 +9,6 @@ embedded, indexed, and retrieved during IT/security triage.
 from dataclasses import dataclass
 from pathlib import Path
 
-
 SUPPORTED_DOCUMENT_EXTENSIONS = {".md", ".txt"}
 
 

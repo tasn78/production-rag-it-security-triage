@@ -9,7 +9,6 @@ from fastapi import FastAPI
 
 from app.api.routes_triage import router as triage_router
 
-
 APP_TITLE = "Production RAG System for IT and Security Triage"
 APP_VERSION = "0.1.0"
 

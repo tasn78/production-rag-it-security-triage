@@ -7,8 +7,8 @@ severity scores and explanation reasons.
 
 import pytest
 
-from app.triage.severity import calculate_severity, map_score_to_severity
 from app.triage.schemas import SeverityLevel, TriageCategory
+from app.triage.severity import calculate_severity, map_score_to_severity
 
 
 def test_map_score_to_severity_returns_low_for_small_score() -> None:
@@ -44,7 +44,9 @@ def test_calculate_severity_scores_security_alert_as_high() -> None:
     Verify that suspicious external authentication activity receives high severity.
     """
     result = calculate_severity(
-        ticket_text="Repeated failed login attempts from an external IP indicate brute force activity.",
+        ticket_text=(
+            "Repeated failed login attempts from an external IP indicate brute force activity."
+        ),
         category=TriageCategory.SECURITY_ALERT,
     )
 

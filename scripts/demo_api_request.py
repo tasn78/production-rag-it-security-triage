@@ -5,11 +5,9 @@ Run this script while the FastAPI server is running locally. It sends example
 triage requests to POST /triage and prints the structured API response.
 """
 
-import json
 from typing import Any
 
 import httpx
-
 
 API_URL = "http://127.0.0.1:8000/triage"
 REQUEST_TIMEOUT_SECONDS = 60.0

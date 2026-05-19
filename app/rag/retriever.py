@@ -14,7 +14,6 @@ from app.rag.embeddings import SentenceTransformerEmbedder, TextEmbedder
 from app.rag.knowledge_base import KnowledgeBaseChunk, load_knowledge_base_chunks
 from app.rag.vector_store import FaissVectorStore, VectorSearchResult
 
-
 DEFAULT_RETRIEVAL_TOP_K = 3
 
 
@@ -142,10 +141,7 @@ class KnowledgeBaseRetriever:
             top_k=top_k,
         )
 
-        return [
-            self._to_retrieval_result(search_result)
-            for search_result in search_results
-        ]
+        return [self._to_retrieval_result(search_result) for search_result in search_results]
 
     @staticmethod
     def _to_retrieval_result(search_result: VectorSearchResult) -> RetrievalResult:

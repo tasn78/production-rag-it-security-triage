@@ -8,7 +8,6 @@ and predictable before adding LLM-based behavior.
 
 from app.triage.schemas import ClassificationResult, TriageCategory
 
-
 CATEGORY_KEYWORDS: dict[TriageCategory, tuple[str, ...]] = {
     TriageCategory.SECURITY_ALERT: (
         "brute force",
