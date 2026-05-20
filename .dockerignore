@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# PyCharm
+.idea/
+
+# Environment files / secrets
+.env
+.env.*
+
+# Local outputs
+logs/
+*.log
+data/vector_store/
+data/processed/
+data/artifacts/
+*.faiss
+*.index
+*.pkl
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation screenshots or local media
+docs/screenshots/

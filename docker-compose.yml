@@ -1,0 +1,12 @@
+services:
+  triage-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: production-rag-it-security-triage-api
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
+      - DOCS_PATH=data/docs
