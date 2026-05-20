@@ -5,6 +5,8 @@ This dashboard provides a simple user interface for submitting tickets or
 security alerts and viewing classification, severity, and retrieved evidence.
 """
 
+# ruff: noqa: E402, I001
+
 import sys
 from pathlib import Path
 
@@ -22,9 +24,7 @@ from app.triage.service import TriageService
 
 DOCS_DIRECTORY = PROJECT_ROOT / "data" / "docs"
 
-DEFAULT_TICKET_TEXT = (
-    "Nginx logs show repeated 401 and 429 responses from the same external IP."
-)
+DEFAULT_TICKET_TEXT = "Nginx logs show repeated 401 and 429 responses from the same external IP."
 
 
 @st.cache_resource
