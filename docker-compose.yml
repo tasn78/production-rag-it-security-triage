@@ -10,3 +10,14 @@ services:
       - ENVIRONMENT=development
       - EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
       - DOCS_PATH=data/docs
+
+  streamlit-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: production-rag-it-security-triage-dashboard
+    ports:
+      - "8501:8501"
+    command: streamlit run frontend/streamlit_app.py --server.address 0.0.0.0 --server.port 8501
+    depends_on:
+      - triage-api

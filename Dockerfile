@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY app ./app
 COPY data ./data
+COPY frontend ./frontend
 
 EXPOSE 8000
 
