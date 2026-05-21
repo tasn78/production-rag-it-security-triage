@@ -30,6 +30,7 @@ htmlcov/
 
 # Logs
 logs/
+data/logs/
 *.log
 
 # Local data outputs

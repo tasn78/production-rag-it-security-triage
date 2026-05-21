@@ -10,7 +10,6 @@ import os
 import requests
 import streamlit as st
 
-
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 DEFAULT_TICKET_TEXT = "Nginx logs show repeated 401 and 429 responses from the same external IP."

@@ -79,6 +79,24 @@ class FakeServiceProvider:
         return FakeTriageService()
 
 
+@dataclass
+class FakeRequestLogger:
+    """
+    Test double for request logging.
+    """
+
+    records: list[dict[str, object]]
+
+    def log(self, **record: object) -> None:
+        """
+        Store log records in memory for assertions.
+
+        Args:
+            record: Triage request summary fields.
+        """
+        self.records.append(record)
+
+
 def test_health_check_returns_ok() -> None:
     """
     Verify that the health check endpoint returns application status.
@@ -100,7 +118,11 @@ def test_triage_endpoint_returns_structured_result() -> None:
     Verify that the triage endpoint returns category, severity, and evidence.
     """
     original_provider = routes_triage.service_provider
+    original_request_logger = routes_triage.request_logger
+    fake_request_logger = FakeRequestLogger(records=[])
+
     routes_triage.service_provider = FakeServiceProvider()
+    routes_triage.request_logger = fake_request_logger
 
     try:
         client = TestClient(create_app())
@@ -123,9 +145,20 @@ def test_triage_endpoint_returns_structured_result() -> None:
         assert payload["matched_keywords"] == ["nginx", "401", "429"]
         assert len(payload["retrieved_evidence"]) == 1
         assert payload["retrieved_evidence"][0]["source_name"] == "nginx_security.md"
+        assert fake_request_logger.records == [
+            {
+                "ticket_text": "Nginx logs show repeated 401 and 429 responses.",
+                "top_k": 1,
+                "category": "Web Server / Nginx",
+                "severity": "High",
+                "severity_score": 5,
+                "retrieved_sources": ["nginx_security.md"],
+            }
+        ]
 
     finally:
         routes_triage.service_provider = original_provider
+        routes_triage.request_logger = original_request_logger
 
 
 def test_triage_endpoint_rejects_empty_ticket_text() -> None:

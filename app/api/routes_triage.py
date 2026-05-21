@@ -5,6 +5,7 @@ This module exposes API endpoints for submitting tickets or alerts and receiving
 structured triage output, including category, severity, and retrieved evidence.
 """
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -12,10 +13,15 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.rag.retriever import KnowledgeBaseRetriever
+from app.triage.request_logger import TriageRequestLogger
 from app.triage.service import TriageService
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DOCS_DIRECTORY = PROJECT_ROOT / "data" / "docs"
+
+DEFAULT_LOG_FILE_PATH = PROJECT_ROOT / "data" / "log" / "triage_requests.jsonl"
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/triage", tags=["triage"])
 
@@ -111,6 +117,7 @@ class TriageServiceProvider:
 
 
 service_provider = TriageServiceProvider()
+request_logger = TriageRequestLogger(log_file_path=DEFAULT_LOG_FILE_PATH)
 
 
 @router.post("", response_model=TriageResponse)
@@ -137,7 +144,7 @@ def triage_ticket(request: TriageRequest) -> TriageResponse:
     except RuntimeError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
 
-    return TriageResponse(
+    response = TriageResponse(
         ticket_text=result.ticket_text,
         category=result.classification.category.value,
         matched_keywords=result.classification.matched_keywords,
@@ -155,3 +162,17 @@ def triage_ticket(request: TriageRequest) -> TriageResponse:
             for evidence in result.retrieved_evidence
         ],
     )
+
+    try:
+        request_logger.log(
+            ticket_text=response.ticket_text,
+            top_k=request.top_k,
+            category=response.category,
+            severity=response.severity,
+            severity_score=response.severity_score,
+            retrieved_sources=[evidence.source_name for evidence in result.retrieved_evidence],
+        )
+    except OSError:
+        logger.warning("Failed to write triage request log.", exc_info=True)
+
+    return response
