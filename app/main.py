@@ -39,7 +39,11 @@ def create_app() -> FastAPI:
         Returns:
             Health status response.
         """
-        return {"status": "ok"}
+        return {
+            "status": "ok",
+            "service": APP_TITLE,
+            "version": APP_VERSION,
+        }
 
     return app
 
