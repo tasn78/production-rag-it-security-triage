@@ -59,3 +59,32 @@ class TriageRequestLogger:
 
         with self.log_file_path.open("a", encoding="utf-8") as log_file:
             log_file.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    def read_recent(self, limit: int = 10) -> list[dict[str, object]]:
+        """
+        Read the most recent triage request log records.
+
+        Args:
+            limit: Maximum number of records to return.
+
+        Returns:
+            Recent triage request records, newest first.
+        """
+        if limit < 1:
+            raise ValueError("limit must be greater than or equal to 1.")
+
+        if not self.log_file_path.exists():
+            return []
+
+        records: list[dict[str, object]] = []
+
+        with self.log_file_path.open("r", encoding="utf-8") as log_file:
+            for line in log_file:
+                line = line.strip()
+
+                if not line:
+                    continue
+
+                records.append(json.loads(line))
+
+        return records[-limit:][::-1]

@@ -97,6 +97,30 @@ class FakeRequestLogger:
         self.records.append(record)
 
 
+@dataclass
+class FakeHistoryLogger:
+    """
+    Test double for reading triage request history.
+    """
+
+    records: list[dict[str, object]]
+
+    def read_recent(self, limit: int = 10) -> list[dict[str, object]]:
+        """
+        Return recent fake history records.
+
+        Args:
+            limit: Maximum number of records to return.
+
+        Returns:
+            Recent fake records.
+        """
+        if limit < 1:
+            raise ValueError("limit must be greater than or equal to 1.")
+
+        return self.records[:limit]
+
+
 def test_health_check_returns_ok() -> None:
     """
     Verify that the health check endpoint returns application status.
@@ -193,3 +217,59 @@ def test_triage_endpoint_rejects_invalid_top_k() -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_triage_history_endpoint_returns_recent_records() -> None:
+    """
+    Verify that the triage history endpoint returns recent request records.
+    """
+    original_logger = routes_triage.request_logger
+    routes_triage.request_logger = FakeHistoryLogger(
+        records=[
+            {
+                "timestamp_utc": "2026-05-21T00:00:00+00:00",
+                "ticket_text": "Nginx logs show repeated 401 responses.",
+                "top_k": 3,
+                "category": "Web Server / Nginx",
+                "severity": "High",
+                "severity_score": 5,
+                "retrieved_sources": ["nginx_security.md"],
+            }
+        ]
+    )
+
+    try:
+        client = TestClient(create_app())
+
+        response = client.get("/triage/history?limit=1")
+
+        assert response.status_code == 200
+
+        payload = response.json()
+
+        assert len(payload["records"]) == 1
+        assert payload["records"][0]["category"] == "Web Server / Nginx"
+        assert payload["records"][0]["severity"] == "High"
+        assert payload["records"][0]["retrieved_sources"] == ["nginx_security.md"]
+
+    finally:
+        routes_triage.request_logger = original_logger
+
+
+def test_triage_history_endpoint_rejects_invalid_limit() -> None:
+    """
+    Verify that invalid triage history limits are rejected.
+    """
+    original_logger = routes_triage.request_logger
+    routes_triage.request_logger = FakeHistoryLogger(records=[])
+
+    try:
+        client = TestClient(create_app())
+
+        response = client.get("/triage/history?limit=0")
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "limit must be greater than or equal to 1."
+
+    finally:
+        routes_triage.request_logger = original_logger

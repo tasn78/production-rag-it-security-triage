@@ -90,6 +90,17 @@ class TriageResponse(BaseModel):
     retrieved_evidence: list[RetrievedEvidenceResponse]
 
 
+class TriageHistoryResponse(BaseModel):
+    """
+    API response body for recent triage request history.
+
+    Attributes:
+        records: Recent triage request log records.
+    """
+
+    records: list[dict[str, object]]
+
+
 @dataclass
 class TriageServiceProvider:
     """
@@ -118,6 +129,30 @@ class TriageServiceProvider:
 
 service_provider = TriageServiceProvider()
 request_logger = TriageRequestLogger(log_file_path=DEFAULT_LOG_FILE_PATH)
+
+
+@router.get("/history", response_model=TriageHistoryResponse)
+def get_triage_history(limit: int = 10) -> TriageHistoryResponse:
+    """
+    Return recent triage request history.
+
+    Args:
+        limit: Maximum number of recent records to return.
+
+    Returns:
+        Recent triage request log records.
+
+    Raises:
+        HTTPException: If the limit is invalid or history cannot be read.
+    """
+    try:
+        records = request_logger.read_recent(limit=limit)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except OSError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+
+    return TriageHistoryResponse(records=records)
 
 
 @router.post("", response_model=TriageResponse)

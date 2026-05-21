@@ -38,6 +38,25 @@ def run_triage_request(ticket_text: str, top_k: int) -> dict:
     return response.json()
 
 
+def get_triage_history(limit: int = 10) -> list[dict[str, object]]:
+    """
+    Fetch recent triage request history from the FastAPI backend.
+
+    Args:
+        limit: Maximum number of recent records to return.
+
+    Returns:
+        Recent triage request records.
+    """
+    response = requests.get(
+        f"{API_BASE_URL}/triage/history",
+        params={"limit": limit},
+        timeout=30,
+    )
+    response.raise_for_status()
+    return response.json().get("records", [])
+
+
 def display_triage_result(ticket_text: str, top_k: int) -> None:
     """
     Run triage through the API and display structured results.
@@ -90,6 +109,33 @@ def display_triage_result(ticket_text: str, top_k: int) -> None:
             st.write(evidence["text"])
 
 
+def display_triage_history() -> None:
+    """
+    Display recent triage request history in the dashboard.
+    """
+    st.subheader("Recent Triage History")
+
+    try:
+        records = get_triage_history(limit=10)
+    except requests.exceptions.RequestException as error:
+        st.warning(
+            "Recent triage history is unavailable. "
+            f"Check that the API is running at {API_BASE_URL}."
+        )
+        st.exception(error)
+        return
+
+    if not records:
+        st.info("No triage history has been recorded yet.")
+        return
+
+    st.dataframe(
+        records,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+
 def main() -> None:
     """
     Render the Streamlit triage dashboard.
@@ -126,6 +172,9 @@ def main() -> None:
 
         with st.spinner("Running triage workflow..."):
             display_triage_result(ticket_text=ticket_text, top_k=top_k)
+
+    st.divider()
+    display_triage_history()
 
 
 if __name__ == "__main__":
