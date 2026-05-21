@@ -347,6 +347,14 @@ pytest
 
 This helps verify that code remains linted, formatted, and tested before changes are merged or shared.
 
+## Running with Docker Compose
+
+The project can be run locally with Docker Compose. This starts both the FastAPI backend and the Streamlit dashboard.
+
+```powershell
+docker compose up --build
+```
+
 ## Example Demo Results
 
 ```text
