@@ -74,15 +74,16 @@ Evidence: nginx_security.md
 - [x] Ruff linting and formatting
 - [x] Docker support for the FastAPI backend
 - [x] GitHub Actions CI
+- [x] Streamlit dashboard
+- [x] Docker Compose support for FastAPI and Streamlit
 
 ## Planned Features
-
-- [ ] Streamlit dashboard
 - [ ] Saved triage records and request logging
 - [ ] Feedback capture for human review
 - [ ] Optional LLM-generated triage summaries
 - [ ] Cloud deployment
 - [ ] Expanded evaluation dataset
+- [ ] More polished dashboard styling and screenshots
 
 ## Engineering Standards
 
