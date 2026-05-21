@@ -5,83 +5,90 @@ This dashboard provides a simple user interface for submitting tickets or
 security alerts and viewing classification, severity, and retrieved evidence.
 """
 
-# ruff: noqa: E402, I001
+import os
 
-import sys
-from pathlib import Path
-
+import requests
 import streamlit as st
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from app.rag.retriever import KnowledgeBaseRetriever
-from app.triage.service import TriageService
-
-
-DOCS_DIRECTORY = PROJECT_ROOT / "data" / "docs"
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 DEFAULT_TICKET_TEXT = "Nginx logs show repeated 401 and 429 responses from the same external IP."
 
 
-@st.cache_resource
-def load_triage_service() -> TriageService:
+def run_triage_request(ticket_text: str, top_k: int) -> dict:
     """
-    Build and cache the triage service for Streamlit sessions.
+    Send a triage request to the FastAPI backend.
+
+    Args:
+        ticket_text: Ticket or alert text submitted by the user.
+        top_k: Number of evidence chunks to retrieve.
 
     Returns:
-        TriageService with a built knowledge base retriever.
+        Parsed JSON response from the FastAPI triage endpoint.
     """
-    retriever = KnowledgeBaseRetriever(docs_directory=DOCS_DIRECTORY)
-    retriever.build()
-    return TriageService(retriever=retriever)
+    response = requests.post(
+        f"{API_BASE_URL}/triage",
+        json={
+            "ticket_text": ticket_text,
+            "top_k": top_k,
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+    return response.json()
 
 
 def display_triage_result(ticket_text: str, top_k: int) -> None:
     """
-    Run triage and display structured results in the dashboard.
+    Run triage through the API and display structured results.
 
     Args:
         ticket_text: Ticket or alert text submitted by the user.
         top_k: Number of evidence chunks to retrieve.
     """
-    triage_service = load_triage_service()
-    result = triage_service.triage_ticket(ticket_text=ticket_text, top_k=top_k)
+    try:
+        result = run_triage_request(ticket_text=ticket_text, top_k=top_k)
+    except requests.exceptions.RequestException as error:
+        st.error(
+            "The dashboard could not connect to the FastAPI backend. "
+            f"Check that the API is running at {API_BASE_URL}."
+        )
+        st.exception(error)
+        return
 
     st.subheader("Triage Summary")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric("Category", result.classification.category.value)
+        st.metric("Category", result["category"])
 
     with col2:
-        st.metric("Severity", result.severity.severity.value)
+        st.metric("Severity", result["severity"])
 
     with col3:
-        st.metric("Severity Score", result.severity.score)
+        st.metric("Severity Score", result["severity_score"])
 
     st.subheader("Matched Keywords")
-    if result.classification.matched_keywords:
-        st.write(", ".join(result.classification.matched_keywords))
+    matched_keywords = result.get("matched_keywords", [])
+    if matched_keywords:
+        st.write(", ".join(matched_keywords))
     else:
         st.write("No specific keywords matched.")
 
     st.subheader("Severity Reasons")
-    for reason in result.severity.reasons:
+    for reason in result.get("severity_reasons", []):
         st.write(f"- {reason}")
 
     st.subheader("Retrieved Evidence")
 
-    for evidence in result.retrieved_evidence:
+    for evidence in result.get("retrieved_evidence", []):
         with st.expander(
-            f"Rank {evidence.rank}: {evidence.source_name} "
-            f"(Chunk {evidence.chunk_index}, Score {evidence.score:.4f})"
+            f"Rank {evidence['rank']}: {evidence['source_name']} "
+            f"(Chunk {evidence['chunk_index']}, Score {evidence['score']:.4f})"
         ):
-            st.write(evidence.text)
+            st.write(evidence["text"])
 
 
 def main() -> None:
