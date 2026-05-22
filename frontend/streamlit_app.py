@@ -38,43 +38,14 @@ def run_triage_request(ticket_text: str, top_k: int) -> dict:
     return response.json()
 
 
-def get_triage_history(limit: int = 10) -> list[dict[str, object]]:
+def display_triage_response(result: dict, ticket_text: str) -> None:
     """
-    Fetch recent triage request history from the FastAPI backend.
+    Display a triage API response and feedback form.
 
     Args:
-        limit: Maximum number of recent records to return.
-
-    Returns:
-        Recent triage request records.
+        result: Parsed JSON response from the FastAPI triage endpoint.
+        ticket_text: Original ticket or alert text.
     """
-    response = requests.get(
-        f"{API_BASE_URL}/triage/history",
-        params={"limit": limit},
-        timeout=30,
-    )
-    response.raise_for_status()
-    return response.json().get("records", [])
-
-
-def display_triage_result(ticket_text: str, top_k: int) -> None:
-    """
-    Run triage through the API and display structured results.
-
-    Args:
-        ticket_text: Ticket or alert text submitted by the user.
-        top_k: Number of evidence chunks to retrieve.
-    """
-    try:
-        result = run_triage_request(ticket_text=ticket_text, top_k=top_k)
-    except requests.exceptions.RequestException as error:
-        st.error(
-            "The dashboard could not connect to the FastAPI backend. "
-            f"Check that the API is running at {API_BASE_URL}."
-        )
-        st.exception(error)
-        return
-
     st.subheader("Triage Summary")
 
     col1, col2, col3 = st.columns(3)
@@ -108,6 +79,85 @@ def display_triage_result(ticket_text: str, top_k: int) -> None:
         ):
             st.write(evidence["text"])
 
+    display_feedback_form(
+        ticket_text=ticket_text,
+        category=result["category"],
+        severity=result["severity"],
+    )
+
+
+def get_triage_history(limit: int = 10) -> list[dict[str, object]]:
+    """
+    Fetch recent triage request history from the FastAPI backend.
+
+    Args:
+        limit: Maximum number of recent records to return.
+
+    Returns:
+        Recent triage request records.
+    """
+    response = requests.get(
+        f"{API_BASE_URL}/triage/history",
+        params={"limit": limit},
+        timeout=30,
+    )
+    response.raise_for_status()
+    return response.json().get("records", [])
+
+
+def submit_triage_feedback(
+    *,
+    ticket_text: str,
+    category: str,
+    severity: str,
+    useful: bool,
+    notes: str | None,
+) -> None:
+    """
+    Submit user feedback for a triage result to the FastAPI backend.
+
+    Args:
+        ticket_text: Original ticket or alert text.
+        category: Triage category returned by the API.
+        severity: Severity returned by the API.
+        useful: Whether the triage result was useful.
+        notes: Optional feedback notes.
+    """
+    response = requests.post(
+        f"{API_BASE_URL}/triage/feedback",
+        json={
+            "ticket_text": ticket_text,
+            "category": category,
+            "severity": severity,
+            "useful": useful,
+            "notes": notes,
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+
+
+def display_triage_result(ticket_text: str, top_k: int) -> None:
+    """
+    Run triage through the API and store the result in session state.
+
+    Args:
+        ticket_text: Ticket or alert text submitted by the user.
+        top_k: Number of evidence chunks to retrieve.
+    """
+    try:
+        result = run_triage_request(ticket_text=ticket_text, top_k=top_k)
+    except requests.exceptions.RequestException as error:
+        st.error(
+            "The dashboard could not connect to the FastAPI backend. "
+            f"Check that the API is running at {API_BASE_URL}."
+        )
+        st.exception(error)
+        return
+
+    st.session_state["latest_triage_result"] = result
+    st.session_state["latest_ticket_text"] = ticket_text
+
 
 def display_triage_history() -> None:
     """
@@ -134,6 +184,46 @@ def display_triage_history() -> None:
         use_container_width=True,
         hide_index=True,
     )
+
+
+def display_feedback_form(ticket_text: str, category: str, severity: str) -> None:
+    """
+    Display a feedback form for the most recent triage result.
+
+    Args:
+        ticket_text: Original ticket or alert text.
+        category: Triage category returned by the API.
+        severity: Severity returned by the API.
+    """
+    st.subheader("Triage Feedback")
+
+    useful_label = st.radio(
+        "Was this triage result useful?",
+        options=["Yes", "No"],
+        horizontal=True,
+    )
+    notes = st.text_area(
+        "Optional feedback notes",
+        placeholder="Example: The category was correct, but the severity was too high.",
+    )
+
+    if st.button("Submit Feedback"):
+        try:
+            submit_triage_feedback(
+                ticket_text=ticket_text,
+                category=category,
+                severity=severity,
+                useful=useful_label == "Yes",
+                notes=notes.strip() or None,
+            )
+        except requests.exceptions.RequestException as error:
+            st.error(
+                f"Feedback could not be submitted. Check that the API is running at {API_BASE_URL}."
+            )
+            st.exception(error)
+            return
+
+        st.success("Feedback recorded.")
 
 
 def main() -> None:
@@ -172,6 +262,12 @@ def main() -> None:
 
         with st.spinner("Running triage workflow..."):
             display_triage_result(ticket_text=ticket_text, top_k=top_k)
+
+    if "latest_triage_result" in st.session_state:
+        display_triage_response(
+            result=st.session_state["latest_triage_result"],
+            ticket_text=st.session_state["latest_ticket_text"],
+        )
 
     st.divider()
     display_triage_history()

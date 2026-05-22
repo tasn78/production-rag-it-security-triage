@@ -121,6 +121,24 @@ class FakeHistoryLogger:
         return self.records[:limit]
 
 
+@dataclass
+class FakeFeedbackLogger:
+    """
+    Test double for triage feedback logging.
+    """
+
+    records: list[dict[str, object]]
+
+    def log(self, **record: object) -> None:
+        """
+        Store feedback records in memory for assertions.
+
+        Args:
+            record: Feedback summary fields.
+        """
+        self.records.append(record)
+
+
 def test_health_check_returns_ok() -> None:
     """
     Verify that the health check endpoint returns application status.
@@ -273,3 +291,59 @@ def test_triage_history_endpoint_rejects_invalid_limit() -> None:
 
     finally:
         routes_triage.request_logger = original_logger
+
+
+def test_triage_feedback_endpoint_records_feedback() -> None:
+    """
+    Verify that the feedback endpoint records user feedback.
+    """
+    original_logger = routes_triage.feedback_logger
+    fake_logger = FakeFeedbackLogger(records=[])
+    routes_triage.feedback_logger = fake_logger
+
+    try:
+        client = TestClient(create_app())
+
+        response = client.post(
+            "/triage/feedback",
+            json={
+                "ticket_text": "Nginx logs show repeated 401 responses.",
+                "category": "Web Server / Nginx",
+                "severity": "High",
+                "useful": True,
+                "notes": "The evidence was helpful.",
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json() == {"status": "recorded"}
+
+        assert len(fake_logger.records) == 1
+        assert fake_logger.records[0]["ticket_text"] == ("Nginx logs show repeated 401 responses.")
+        assert fake_logger.records[0]["category"] == "Web Server / Nginx"
+        assert fake_logger.records[0]["severity"] == "High"
+        assert fake_logger.records[0]["useful"] is True
+        assert fake_logger.records[0]["notes"] == "The evidence was helpful."
+
+    finally:
+        routes_triage.feedback_logger = original_logger
+
+
+def test_triage_feedback_endpoint_rejects_empty_ticket_text() -> None:
+    """
+    Verify that empty feedback ticket text is rejected by validation.
+    """
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/triage/feedback",
+        json={
+            "ticket_text": "",
+            "category": "Web Server / Nginx",
+            "severity": "High",
+            "useful": True,
+            "notes": "Helpful.",
+        },
+    )
+
+    assert response.status_code == 422

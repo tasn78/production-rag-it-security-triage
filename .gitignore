@@ -32,6 +32,7 @@ htmlcov/
 logs/
 data/logs/
 *.log
+data/log/
 
 # Local data outputs
 data/vector_store/

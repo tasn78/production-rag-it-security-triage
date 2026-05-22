@@ -10,6 +10,8 @@ services:
       - ENVIRONMENT=development
       - EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
       - DOCS_PATH=data/docs
+    volumes:
+      - ./data/log:/app/data/log
 
   streamlit-dashboard:
     build:

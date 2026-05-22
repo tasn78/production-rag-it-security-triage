@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.rag.retriever import KnowledgeBaseRetriever
+from app.triage.feedback_logger import TriageFeedbackLogger
 from app.triage.request_logger import TriageRequestLogger
 from app.triage.service import TriageService
 
@@ -20,6 +21,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DOCS_DIRECTORY = PROJECT_ROOT / "data" / "docs"
 
 DEFAULT_LOG_FILE_PATH = PROJECT_ROOT / "data" / "log" / "triage_requests.jsonl"
+DEFAULT_FEEDBACK_LOG_FILE_PATH = PROJECT_ROOT / "data" / "log" / "triage_feedback.jsonl"
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +103,54 @@ class TriageHistoryResponse(BaseModel):
     records: list[dict[str, object]]
 
 
+class TriageFeedbackRequest(BaseModel):
+    """
+    API request body for triage feedback.
+
+    Attributes:
+        ticket_text: Original ticket, alert, or issue description.
+        category: Category assigned by the triage system.
+        severity: Severity assigned by the triage system.
+        useful: Whether the user found the triage result useful.
+        notes: Optional feedback notes.
+    """
+
+    ticket_text: str = Field(
+        ...,
+        min_length=1,
+        description="Original ticket, alert, or issue description.",
+    )
+    category: str = Field(
+        ...,
+        min_length=1,
+        description="Category assigned by the triage system.",
+    )
+    severity: str = Field(
+        ...,
+        min_length=1,
+        description="Severity assigned by the triage system.",
+    )
+    useful: bool = Field(
+        ...,
+        description="Whether the user found the triage result useful.",
+    )
+    notes: str | None = Field(
+        default=None,
+        description="Optional feedback notes.",
+    )
+
+
+class TriageFeedbackResponse(BaseModel):
+    """
+    API response body for triage feedback submission.
+
+    Attributes:
+        status: Feedback recording status.
+    """
+
+    status: str
+
+
 @dataclass
 class TriageServiceProvider:
     """
@@ -129,6 +179,7 @@ class TriageServiceProvider:
 
 service_provider = TriageServiceProvider()
 request_logger = TriageRequestLogger(log_file_path=DEFAULT_LOG_FILE_PATH)
+feedback_logger = TriageFeedbackLogger(log_file_path=DEFAULT_FEEDBACK_LOG_FILE_PATH)
 
 
 @router.get("/history", response_model=TriageHistoryResponse)
@@ -153,6 +204,34 @@ def get_triage_history(limit: int = 10) -> TriageHistoryResponse:
         raise HTTPException(status_code=500, detail=str(error)) from error
 
     return TriageHistoryResponse(records=records)
+
+
+@router.post("/feedback", response_model=TriageFeedbackResponse)
+def submit_triage_feedback(request: TriageFeedbackRequest) -> TriageFeedbackResponse:
+    """
+    Record user feedback for a triage result.
+
+    Args:
+        request: Feedback request containing triage result context and usefulness.
+
+    Returns:
+        Feedback recording status.
+
+    Raises:
+        HTTPException: If feedback cannot be written.
+    """
+    try:
+        feedback_logger.log(
+            ticket_text=request.ticket_text,
+            category=request.category,
+            severity=request.severity,
+            useful=request.useful,
+            notes=request.notes,
+        )
+    except OSError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+
+    return TriageFeedbackResponse(status="recorded")
 
 
 @router.post("", response_model=TriageResponse)
