@@ -151,6 +151,25 @@ class TriageFeedbackResponse(BaseModel):
     status: str
 
 
+class TriageFeedbackSummaryResponse(BaseModel):
+    """
+    API response body for triage feedback summary.
+
+    Attributes:
+        total_feedback: Total number of feedback records.
+        useful_count: Number of feedback records marked useful.
+        not_useful_count: Number of feedback records marked not useful.
+        useful_percentage: Percentage of feedback marked useful.
+        recent_feedback: Recent feedback records, newest first.
+    """
+
+    total_feedback: int
+    useful_count: int
+    not_useful_count: int
+    useful_percentage: float
+    recent_feedback: list[dict[str, object]]
+
+
 @dataclass
 class TriageServiceProvider:
     """
@@ -232,6 +251,30 @@ def submit_triage_feedback(request: TriageFeedbackRequest) -> TriageFeedbackResp
         raise HTTPException(status_code=500, detail=str(error)) from error
 
     return TriageFeedbackResponse(status="recorded")
+
+
+@router.get("/feedback/summary", response_model=TriageFeedbackSummaryResponse)
+def get_triage_feedback_summary(recent_limit: int = 10) -> TriageFeedbackSummaryResponse:
+    """
+    Return summary statistics for triage feedback.
+
+    Args:
+        recent_limit: Maximum number of recent feedback records to include.
+
+    Returns:
+        Feedback summary with counts, percentage, and recent records.
+
+    Raises:
+        HTTPException: If the limit is invalid or feedback cannot be read.
+    """
+    try:
+        summary = feedback_logger.summarize(recent_limit=recent_limit)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except OSError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+
+    return TriageFeedbackSummaryResponse(**summary)
 
 
 @router.post("", response_model=TriageResponse)

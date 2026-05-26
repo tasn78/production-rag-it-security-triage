@@ -138,6 +138,35 @@ class FakeFeedbackLogger:
         """
         self.records.append(record)
 
+    def summarize(self, recent_limit: int = 10) -> dict[str, object]:
+        """
+        Return summary statistics for fake feedback records.
+
+        Args:
+            recent_limit: Maximum number of recent records to include.
+
+        Returns:
+            Feedback summary fields.
+        """
+        if recent_limit < 1:
+            raise ValueError("recent_limit must be greater than or equal to 1.")
+
+        useful_count = sum(1 for record in self.records if record.get("useful") is True)
+        total_feedback = len(self.records)
+        not_useful_count = total_feedback - useful_count
+
+        useful_percentage = (
+            round((useful_count / total_feedback) * 100, 2) if total_feedback > 0 else 0.0
+        )
+
+        return {
+            "total_feedback": total_feedback,
+            "useful_count": useful_count,
+            "not_useful_count": not_useful_count,
+            "useful_percentage": useful_percentage,
+            "recent_feedback": self.records[:recent_limit],
+        }
+
 
 def test_health_check_returns_ok() -> None:
     """
@@ -347,3 +376,67 @@ def test_triage_feedback_endpoint_rejects_empty_ticket_text() -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_triage_feedback_summary_endpoint_returns_metrics() -> None:
+    """
+    Verify that the feedback summary endpoint returns evaluation metrics.
+    """
+    original_logger = routes_triage.feedback_logger
+    routes_triage.feedback_logger = FakeFeedbackLogger(
+        records=[
+            {
+                "timestamp_utc": "2026-05-22T19:44:14+00:00",
+                "ticket_text": "Nginx 401 errors.",
+                "category": "Security Alert",
+                "severity": "High",
+                "useful": True,
+                "notes": "Helpful evidence.",
+            },
+            {
+                "timestamp_utc": "2026-05-22T19:45:14+00:00",
+                "ticket_text": "VPN disconnected.",
+                "category": "VPN / Network Access",
+                "severity": "Medium",
+                "useful": False,
+                "notes": "Severity was too low.",
+            },
+        ]
+    )
+
+    try:
+        client = TestClient(create_app())
+
+        response = client.get("/triage/feedback/summary?recent_limit=2")
+
+        assert response.status_code == 200
+
+        payload = response.json()
+
+        assert payload["total_feedback"] == 2
+        assert payload["useful_count"] == 1
+        assert payload["not_useful_count"] == 1
+        assert payload["useful_percentage"] == 50.0
+        assert len(payload["recent_feedback"]) == 2
+
+    finally:
+        routes_triage.feedback_logger = original_logger
+
+
+def test_triage_feedback_summary_endpoint_rejects_invalid_limit() -> None:
+    """
+    Verify that invalid feedback summary limits are rejected.
+    """
+    original_logger = routes_triage.feedback_logger
+    routes_triage.feedback_logger = FakeFeedbackLogger(records=[])
+
+    try:
+        client = TestClient(create_app())
+
+        response = client.get("/triage/feedback/summary?recent_limit=0")
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == ("recent_limit must be greater than or equal to 1.")
+
+    finally:
+        routes_triage.feedback_logger = original_logger

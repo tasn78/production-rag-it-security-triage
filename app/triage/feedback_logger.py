@@ -56,3 +56,81 @@ class TriageFeedbackLogger:
 
         with self.log_file_path.open("a", encoding="utf-8") as log_file:
             log_file.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    def read_recent(self, limit: int = 10) -> list[dict[str, object]]:
+        """
+        Read the most recent triage feedback records.
+
+        Args:
+            limit: Maximum number of records to return.
+
+        Returns:
+            Recent triage feedback records, newest first.
+        """
+        if limit < 1:
+            raise ValueError("limit must be greater than or equal to 1.")
+
+        if not self.log_file_path.exists():
+            return []
+
+        records: list[dict[str, object]] = []
+
+        with self.log_file_path.open("r", encoding="utf-8") as log_file:
+            for line in log_file:
+                line = line.strip()
+
+                if not line:
+                    continue
+
+                records.append(json.loads(line))
+
+        return records[-limit:][::-1]
+
+    def summarize(self, recent_limit: int = 10) -> dict[str, object]:
+        """
+        Summarize triage feedback records.
+
+        Args:
+            recent_limit: Maximum number of recent feedback records to include.
+
+        Returns:
+            Feedback summary with counts, percentage, and recent records.
+        """
+        if recent_limit < 1:
+            raise ValueError("recent_limit must be greater than or equal to 1.")
+
+        if not self.log_file_path.exists():
+            return {
+                "total_feedback": 0,
+                "useful_count": 0,
+                "not_useful_count": 0,
+                "useful_percentage": 0.0,
+                "recent_feedback": [],
+            }
+
+        records: list[dict[str, object]] = []
+
+        with self.log_file_path.open("r", encoding="utf-8") as log_file:
+            for line in log_file:
+                line = line.strip()
+
+                if not line:
+                    continue
+
+                records.append(json.loads(line))
+
+        useful_count = sum(1 for record in records if record.get("useful") is True)
+        total_feedback = len(records)
+        not_useful_count = total_feedback - useful_count
+
+        useful_percentage = (
+            round((useful_count / total_feedback) * 100, 2) if total_feedback > 0 else 0.0
+        )
+
+        return {
+            "total_feedback": total_feedback,
+            "useful_count": useful_count,
+            "not_useful_count": not_useful_count,
+            "useful_percentage": useful_percentage,
+            "recent_feedback": records[-recent_limit:][::-1],
+        }

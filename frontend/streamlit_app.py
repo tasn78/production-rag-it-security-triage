@@ -105,6 +105,25 @@ def get_triage_history(limit: int = 10) -> list[dict[str, object]]:
     return response.json().get("records", [])
 
 
+def get_feedback_summary(recent_limit: int = 10) -> dict[str, object]:
+    """
+    Fetch feedback summary metrics from the FastAPI backend.
+
+    Args:
+        recent_limit: Maximum number of recent feedback records to include.
+
+    Returns:
+        Feedback summary metrics and recent feedback records.
+    """
+    response = requests.get(
+        f"{API_BASE_URL}/triage/feedback/summary",
+        params={"recent_limit": recent_limit},
+        timeout=30,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
 def submit_triage_feedback(
     *,
     ticket_text: str,
@@ -184,6 +203,48 @@ def display_triage_history() -> None:
         use_container_width=True,
         hide_index=True,
     )
+
+
+def display_feedback_summary() -> None:
+    """
+    Display feedback summary metrics in the dashboard.
+    """
+    st.subheader("Feedback Summary")
+
+    try:
+        summary = get_feedback_summary(recent_limit=10)
+    except requests.exceptions.RequestException as error:
+        st.warning(
+            f"Feedback summary is unavailable. Check that the API is running at {API_BASE_URL}."
+        )
+        st.exception(error)
+        return
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("Total Feedback", summary["total_feedback"])
+
+    with col2:
+        st.metric("Useful", summary["useful_count"])
+
+    with col3:
+        st.metric("Not Useful", summary["not_useful_count"])
+
+    with col4:
+        st.metric("Useful %", f"{summary['useful_percentage']}%")
+
+    recent_feedback = summary.get("recent_feedback", [])
+
+    if recent_feedback:
+        st.write("Recent Feedback")
+        st.dataframe(
+            recent_feedback,
+            use_container_width=True,
+            hide_index=True,
+        )
+    else:
+        st.info("No feedback has been recorded yet.")
 
 
 def display_feedback_form(ticket_text: str, category: str, severity: str) -> None:
@@ -268,6 +329,9 @@ def main() -> None:
             result=st.session_state["latest_triage_result"],
             ticket_text=st.session_state["latest_ticket_text"],
         )
+
+    st.divider()
+    display_feedback_summary()
 
     st.divider()
     display_triage_history()
