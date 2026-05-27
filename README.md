@@ -4,7 +4,7 @@
 
 A production-oriented AI backend system that uses retrieval-augmented generation concepts to triage IT support tickets and security alerts using internal documentation.
 
-The system classifies tickets, calculates severity, retrieves relevant knowledge-base evidence, and exposes the workflow through a FastAPI endpoint.
+The system classifies tickets, calculates severity, retrieves relevant knowledge-base evidence, tracks requests with unique request IDs, captures human feedback, and exposes the workflow through FastAPI and a Streamlit dashboard.
 
 ## Purpose
 
@@ -23,13 +23,22 @@ This project demonstrates practical AI engineering and backend software developm
 - GitHub Actions CI
 - Git/GitHub version control
 - Production-oriented project organization
+- Streamlit dashboard development
+- Request history logging with request ID tracing
+- Human feedback capture for triage evaluation
+- Feedback summary metrics
+- Docker Compose multi-service execution
 
 ## Current Status
 
-The project currently supports an end-to-end local triage workflow:
+The project currently supports an end-to-end local triage and feedback workflow:
 
 ```text
 Ticket or alert text
+    ↓
+FastAPI triage request
+    ↓
+Unique request_id generation
     ↓
 Rule-based classification
     ↓
@@ -37,7 +46,16 @@ Severity scoring
     ↓
 Knowledge-base retrieval
     ↓
-Structured FastAPI response
+Structured API response
+    ↓
+Streamlit dashboard display
+    ↓
+Human feedback capture
+    ↓
+Request and feedback logs
+    ↓
+Feedback summary metrics
+
 ```
 
 Example input:
@@ -76,14 +94,20 @@ Evidence: nginx_security.md
 - [x] GitHub Actions CI
 - [x] Streamlit dashboard
 - [x] Docker Compose support for FastAPI and Streamlit
+- [x] Request logging with local JSONL persistence
+- [x] Request ID tracking across triage, history, and feedback
+- [x] Feedback capture for human review
+- [x] Feedback summary metrics
+- [x] API health status display in dashboard
+- [x] Streamlit dashboard history view
 
 ## Planned Features
-- [ ] Saved triage records and request logging
-- [ ] Feedback capture for human review
 - [ ] Optional LLM-generated triage summaries
 - [ ] Cloud deployment
 - [ ] Expanded evaluation dataset
 - [ ] More polished dashboard styling and screenshots
+- [ ] Exportable triage reports
+- [ ] Authentication or role-based access control
 
 ## Engineering Standards
 
@@ -118,10 +142,15 @@ app/
 │   └── vector_store.py         # FAISS vector search
 ├── triage/
 │   ├── classifier.py           # Rule-based ticket classification
+│   ├── feedback_logger.py      # JSONL feedback logging and feedback summaries
+│   ├── request_logger.py       # JSONL request history logging
 │   ├── schemas.py              # Shared triage domain types
 │   ├── service.py              # Triage workflow orchestration
 │   └── severity.py             # Explainable severity scoring
 └── main.py                     # FastAPI application entry point
+
+frontend/
+└── streamlit_app.py            # Streamlit triage dashboard
 ```
 
 ## Knowledge Base Documents
@@ -175,6 +204,10 @@ At the current milestone, the test suite covers:
 - Triage service orchestration
 - FastAPI triage endpoint
 - Evaluation utilities
+- Request history endpoint
+- Feedback submission endpoint
+- Feedback summary endpoint
+- Request ID tracking
 
 ## Code Quality Checks
 
@@ -277,6 +310,7 @@ POST /triage
 
 ```json
 {
+  "request_id": "30094c91-f1b3-4b33-875b-76053410fd1d",
   "ticket_text": "Nginx logs show repeated 401 and 429 responses from the same external IP.",
   "category": "Security Alert",
   "matched_keywords": ["external ip"],
@@ -291,11 +325,21 @@ POST /triage
     {
       "source_name": "nginx_security.md",
       "chunk_index": 0,
+      "text": "Example retrieved evidence text.",
       "score": 0.7079,
       "rank": 1
     }
   ]
 }
+```
+## API Endpoints
+
+```text
+GET  /health
+POST /triage
+GET  /triage/history
+POST /triage/feedback
+GET  /triage/feedback/summary
 ```
 
 ## Run the API Demo Script
@@ -314,25 +358,12 @@ python -m scripts.demo_api_request
 
 The script sends example triage requests to the local API and prints category, severity, severity reasons, and retrieved evidence.
 
-## Run with Docker
+## Run with Docker Compose
 
-Build and start the FastAPI backend:
+Build and start the FastAPI backend and Streamlit dashboard:
 
 ```powershell
 docker compose up --build
-```
-
-Open the API documentation:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-Stop the running container with `Ctrl + C`, then remove the container and network:
-
-```powershell
-docker compose down
-```
 
 ## GitHub Actions CI
 
@@ -348,12 +379,27 @@ pytest
 
 This helps verify that code remains linted, formatted, and tested before changes are merged or shared.
 
-## Running with Docker Compose
 
-The project can be run locally with Docker Compose. This starts both the FastAPI backend and the Streamlit dashboard.
+## Streamlit Dashboard
 
-```powershell
-docker compose up --build
+The Streamlit dashboard provides an interactive interface for the triage workflow.
+
+Dashboard features include:
+
+- Ticket or alert text input
+- Configurable number of retrieved evidence chunks
+- Triage category, severity, and severity score display
+- Matched keywords and severity reasons
+- Retrieved knowledge-base evidence
+- Human feedback form
+- Feedback summary metrics
+- Recent feedback table
+- Recent triage history table
+- API health/status display
+
+After starting Docker Compose, open:
+
+http://127.0.0.1:8501
 ```
 
 ## Example Demo Results
