@@ -27,6 +27,7 @@ class TriageFeedbackLogger:
     def log(
         self,
         *,
+        request_id: str,
         ticket_text: str,
         category: str,
         severity: str,
@@ -37,6 +38,7 @@ class TriageFeedbackLogger:
         Append one triage feedback record to the JSONL log file.
 
         Args:
+            request_id: Unique identifier for the triage request.
             ticket_text: Original ticket or alert text.
             category: Predicted triage category.
             severity: Predicted severity label.
@@ -47,6 +49,7 @@ class TriageFeedbackLogger:
 
         record = {
             "timestamp_utc": datetime.now(UTC).isoformat(),
+            "request_id": request_id,
             "ticket_text": ticket_text,
             "category": category,
             "severity": severity,

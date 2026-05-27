@@ -210,6 +210,10 @@ def test_triage_endpoint_returns_structured_result() -> None:
 
         payload = response.json()
 
+        request_id = payload["request_id"]
+        assert isinstance(request_id, str)
+        assert request_id
+
         assert payload["category"] == "Web Server / Nginx"
         assert payload["severity"] == "High"
         assert payload["severity_score"] == 5
@@ -218,6 +222,7 @@ def test_triage_endpoint_returns_structured_result() -> None:
         assert payload["retrieved_evidence"][0]["source_name"] == "nginx_security.md"
         assert fake_request_logger.records == [
             {
+                "request_id": request_id,
                 "ticket_text": "Nginx logs show repeated 401 and 429 responses.",
                 "top_k": 1,
                 "category": "Web Server / Nginx",
@@ -336,6 +341,7 @@ def test_triage_feedback_endpoint_records_feedback() -> None:
         response = client.post(
             "/triage/feedback",
             json={
+                "request_id": "test-request-id",
                 "ticket_text": "Nginx logs show repeated 401 responses.",
                 "category": "Web Server / Nginx",
                 "severity": "High",
@@ -348,7 +354,8 @@ def test_triage_feedback_endpoint_records_feedback() -> None:
         assert response.json() == {"status": "recorded"}
 
         assert len(fake_logger.records) == 1
-        assert fake_logger.records[0]["ticket_text"] == ("Nginx logs show repeated 401 responses.")
+        assert fake_logger.records[0]["request_id"] == "test-request-id"
+        assert fake_logger.records[0]["ticket_text"] == "Nginx logs show repeated 401 responses."
         assert fake_logger.records[0]["category"] == "Web Server / Nginx"
         assert fake_logger.records[0]["severity"] == "High"
         assert fake_logger.records[0]["useful"] is True
@@ -367,6 +374,7 @@ def test_triage_feedback_endpoint_rejects_empty_ticket_text() -> None:
     response = client.post(
         "/triage/feedback",
         json={
+            "request_id": "test-request-id",
             "ticket_text": "",
             "category": "Web Server / Nginx",
             "severity": "High",

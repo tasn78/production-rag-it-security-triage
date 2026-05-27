@@ -27,6 +27,7 @@ class TriageRequestLogger:
     def log(
         self,
         *,
+        request_id: str,
         ticket_text: str,
         top_k: int,
         category: str,
@@ -38,6 +39,7 @@ class TriageRequestLogger:
         Append one triage request summary to the JSONL log file.
 
         Args:
+            request_id: Unique identifier for the triage request.
             ticket_text: Original ticket or alert text.
             top_k: Requested number of evidence chunks.
             category: Predicted triage category.
@@ -49,6 +51,7 @@ class TriageRequestLogger:
 
         record = {
             "timestamp_utc": datetime.now(UTC).isoformat(),
+            "request_id": request_id,
             "ticket_text": ticket_text,
             "top_k": top_k,
             "category": category,

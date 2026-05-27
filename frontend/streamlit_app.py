@@ -95,6 +95,7 @@ def display_triage_response(result: dict, ticket_text: str) -> None:
             st.write(evidence["text"])
 
     display_feedback_form(
+        request_id=result["request_id"],
         ticket_text=ticket_text,
         category=result["category"],
         severity=result["severity"],
@@ -141,6 +142,7 @@ def get_feedback_summary(recent_limit: int = 10) -> dict[str, object]:
 
 def submit_triage_feedback(
     *,
+    request_id: str,
     ticket_text: str,
     category: str,
     severity: str,
@@ -151,6 +153,7 @@ def submit_triage_feedback(
     Submit user feedback for a triage result to the FastAPI backend.
 
     Args:
+        request_id: Unique identifier for the triage request.
         ticket_text: Original ticket or alert text.
         category: Triage category returned by the API.
         severity: Severity returned by the API.
@@ -160,6 +163,7 @@ def submit_triage_feedback(
     response = requests.post(
         f"{API_BASE_URL}/triage/feedback",
         json={
+            "request_id": request_id,
             "ticket_text": ticket_text,
             "category": category,
             "severity": severity,
@@ -289,11 +293,17 @@ def display_feedback_summary() -> None:
         st.info("No feedback has been recorded yet.")
 
 
-def display_feedback_form(ticket_text: str, category: str, severity: str) -> None:
+def display_feedback_form(
+    request_id: str,
+    ticket_text: str,
+    category: str,
+    severity: str,
+) -> None:
     """
     Display a feedback form for the most recent triage result.
 
     Args:
+        request_id: Unique identifier for the triage request.
         ticket_text: Original ticket or alert text.
         category: Triage category returned by the API.
         severity: Severity returned by the API.
@@ -313,6 +323,7 @@ def display_feedback_form(ticket_text: str, category: str, severity: str) -> Non
     if st.button("Submit Feedback"):
         try:
             submit_triage_feedback(
+                request_id=request_id,
                 ticket_text=ticket_text,
                 category=category,
                 severity=severity,

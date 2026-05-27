@@ -8,6 +8,7 @@ structured triage output, including category, severity, and retrieved evidence.
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -74,6 +75,7 @@ class TriageResponse(BaseModel):
     API response body for triage results.
 
     Attributes:
+        request_id: Unique identifier for this triage request.
         ticket_text: Original ticket, alert, or issue description.
         category: Assigned triage category.
         matched_keywords: Keywords that contributed to classification.
@@ -83,6 +85,7 @@ class TriageResponse(BaseModel):
         retrieved_evidence: Ranked evidence chunks from the knowledge base.
     """
 
+    request_id: str
     ticket_text: str
     category: str
     matched_keywords: list[str]
@@ -108,6 +111,7 @@ class TriageFeedbackRequest(BaseModel):
     API request body for triage feedback.
 
     Attributes:
+        request_id: Unique identifier for the triage request.
         ticket_text: Original ticket, alert, or issue description.
         category: Category assigned by the triage system.
         severity: Severity assigned by the triage system.
@@ -115,6 +119,11 @@ class TriageFeedbackRequest(BaseModel):
         notes: Optional feedback notes.
     """
 
+    request_id: str = Field(
+        ...,
+        min_length=1,
+        description="Unique identifier for the triage request.",
+    )
     ticket_text: str = Field(
         ...,
         min_length=1,
@@ -241,6 +250,7 @@ def submit_triage_feedback(request: TriageFeedbackRequest) -> TriageFeedbackResp
     """
     try:
         feedback_logger.log(
+            request_id=request.request_id,
             ticket_text=request.ticket_text,
             category=request.category,
             severity=request.severity,
@@ -301,7 +311,9 @@ def triage_ticket(request: TriageRequest) -> TriageResponse:
     except RuntimeError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
 
+    request_id = str(uuid4())
     response = TriageResponse(
+        request_id=request_id,
         ticket_text=result.ticket_text,
         category=result.classification.category.value,
         matched_keywords=result.classification.matched_keywords,
@@ -322,6 +334,7 @@ def triage_ticket(request: TriageRequest) -> TriageResponse:
 
     try:
         request_logger.log(
+            request_id=response.request_id,
             ticket_text=response.ticket_text,
             top_k=request.top_k,
             category=response.category,
