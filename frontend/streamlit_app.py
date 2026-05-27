@@ -38,6 +38,21 @@ def run_triage_request(ticket_text: str, top_k: int) -> dict:
     return response.json()
 
 
+def get_api_health() -> dict[str, str]:
+    """
+    Fetch FastAPI backend health metadata.
+
+    Returns:
+        API health metadata.
+    """
+    response = requests.get(
+        f"{API_BASE_URL}/health",
+        timeout=10,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
 def display_triage_response(result: dict, ticket_text: str) -> None:
     """
     Display a triage API response and feedback form.
@@ -205,6 +220,33 @@ def display_triage_history() -> None:
     )
 
 
+def display_api_status() -> None:
+    """
+    Display FastAPI backend connection status in the dashboard.
+    """
+    st.subheader("System Status")
+
+    try:
+        health = get_api_health()
+    except requests.exceptions.RequestException as error:
+        st.error(f"API backend is unavailable. Check that the API is running at {API_BASE_URL}.")
+        st.exception(error)
+        return
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric("API Status", health.get("status", "unknown"))
+
+    with col2:
+        st.metric("Service Version", health.get("version", "unknown"))
+
+    with col3:
+        st.metric("Backend URL", API_BASE_URL)
+
+    st.caption(health.get("service", "Production RAG System for IT and Security Triage"))
+
+
 def display_feedback_summary() -> None:
     """
     Display feedback summary metrics in the dashboard.
@@ -329,6 +371,9 @@ def main() -> None:
             result=st.session_state["latest_triage_result"],
             ticket_text=st.session_state["latest_ticket_text"],
         )
+
+    st.divider()
+    display_api_status()
 
     st.divider()
     display_feedback_summary()
