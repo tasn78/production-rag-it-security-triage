@@ -100,13 +100,13 @@ Evidence: nginx_security.md
 - [x] Feedback summary metrics
 - [x] API health status display in dashboard
 - [x] Streamlit dashboard history view
+- [x] Downloadable triage reports
 
 ## Planned Features
 - [ ] Optional LLM-generated triage summaries
 - [ ] Cloud deployment
 - [ ] Expanded evaluation dataset
 - [ ] More polished dashboard styling and screenshots
-- [ ] Exportable triage reports
 - [ ] Authentication or role-based access control
 
 ## Engineering Standards
@@ -396,6 +396,7 @@ Dashboard features include:
 - Recent feedback table
 - Recent triage history table
 - API health/status display
+- Downloadable Markdown triage reports
 
 After starting Docker Compose, open:
 
