@@ -113,7 +113,9 @@ def build_triage_report(result: dict, ticket_text: str) -> str:
                     f"- Chunk Index: {evidence['chunk_index']}",
                     f"- Score: {evidence['score']:.4f}",
                     "",
+                    "```text",
                     evidence["text"],
+                    "```",
                     "",
                 ]
             )
