@@ -53,6 +53,76 @@ def get_api_health() -> dict[str, str]:
     return response.json()
 
 
+def build_triage_report(result: dict, ticket_text: str) -> str:
+    """
+    Build a Markdown report for a triage result.
+
+    Args:
+        result: Parsed JSON response from the FastAPI triage endpoint.
+        ticket_text: Original ticket or alert text.
+
+    Returns:
+        Markdown triage report.
+    """
+    matched_keywords = result.get("matched_keywords", [])
+    severity_reasons = result.get("severity_reasons", [])
+    retrieved_evidence = result.get("retrieved_evidence", [])
+
+    report_lines = [
+        "# IT and Security Triage Report",
+        "",
+        f"Request ID: {result['request_id']}",
+        "",
+        "## Ticket or Alert Text",
+        "",
+        ticket_text,
+        "",
+        "## Triage Summary",
+        "",
+        f"- Category: {result['category']}",
+        f"- Severity: {result['severity']}",
+        f"- Severity Score: {result['severity_score']}",
+        "",
+        "## Matched Keywords",
+        "",
+        ", ".join(matched_keywords) if matched_keywords else "No specific keywords matched.",
+        "",
+        "## Severity Reasons",
+        "",
+    ]
+
+    if severity_reasons:
+        report_lines.extend(f"- {reason}" for reason in severity_reasons)
+    else:
+        report_lines.append("No severity reasons returned.")
+
+    report_lines.extend(
+        [
+            "",
+            "## Retrieved Evidence",
+            "",
+        ]
+    )
+
+    if retrieved_evidence:
+        for evidence in retrieved_evidence:
+            report_lines.extend(
+                [
+                    f"### Rank {evidence['rank']}: {evidence['source_name']}",
+                    "",
+                    f"- Chunk Index: {evidence['chunk_index']}",
+                    f"- Score: {evidence['score']:.4f}",
+                    "",
+                    evidence["text"],
+                    "",
+                ]
+            )
+    else:
+        report_lines.append("No retrieved evidence returned.")
+
+    return "\n".join(report_lines)
+
+
 def display_triage_response(result: dict, ticket_text: str) -> None:
     """
     Display a triage API response and feedback form.
@@ -93,6 +163,14 @@ def display_triage_response(result: dict, ticket_text: str) -> None:
             f"(Chunk {evidence['chunk_index']}, Score {evidence['score']:.4f})"
         ):
             st.write(evidence["text"])
+
+    report = build_triage_report(result=result, ticket_text=ticket_text)
+    st.download_button(
+        label="Download Triage Report",
+        data=report,
+        file_name=f"triage_report_{result['request_id']}.md",
+        mime="text/markdown",
+    )
 
     display_feedback_form(
         request_id=result["request_id"],
