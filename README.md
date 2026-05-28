@@ -55,7 +55,6 @@ Human feedback capture
 Request and feedback logs
     ↓
 Feedback summary metrics
-
 ```
 
 Example input:
@@ -100,7 +99,7 @@ Evidence: nginx_security.md
 - [x] Feedback summary metrics
 - [x] API health status display in dashboard
 - [x] Streamlit dashboard history view
-- [x] Downloadable triage reports
+- [x] Downloadable Markdown triage reports
 
 ## Planned Features
 - [ ] Optional LLM-generated triage summaries
@@ -332,6 +331,7 @@ POST /triage
   ]
 }
 ```
+
 ## API Endpoints
 
 ```text
@@ -364,6 +364,25 @@ Build and start the FastAPI backend and Streamlit dashboard:
 
 ```powershell
 docker compose up --build
+```
+
+Open the FastAPI documentation:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Open the Streamlit dashboard:
+
+```text
+http://127.0.0.1:8501
+```
+
+Stop the running services with `Ctrl + C`, then remove containers and network:
+
+```powershell
+docker compose down
+```
 
 ## GitHub Actions CI
 
@@ -379,7 +398,6 @@ pytest
 
 This helps verify that code remains linted, formatted, and tested before changes are merged or shared.
 
-
 ## Streamlit Dashboard
 
 The Streamlit dashboard provides an interactive interface for the triage workflow.
@@ -391,15 +409,16 @@ Dashboard features include:
 - Triage category, severity, and severity score display
 - Matched keywords and severity reasons
 - Retrieved knowledge-base evidence
+- Downloadable Markdown triage report
 - Human feedback form
 - Feedback summary metrics
 - Recent feedback table
 - Recent triage history table
 - API health/status display
-- Downloadable Markdown triage reports
 
 After starting Docker Compose, open:
 
+```text
 http://127.0.0.1:8501
 ```
 
