@@ -70,6 +70,19 @@ class RetrievedEvidenceResponse(BaseModel):
     rank: int
 
 
+class TriageSummaryResponse(BaseModel):
+    """
+    API response model for generated triage summaries.
+
+    Attributes:
+        summary_text: Concise plain-English explanation of the triage result.
+        recommended_next_steps: Suggested next actions for review or escalation.
+    """
+
+    summary_text: str
+    recommended_next_steps: list[str]
+
+
 class TriageResponse(BaseModel):
     """
     API response body for triage results.
@@ -83,6 +96,7 @@ class TriageResponse(BaseModel):
         severity_score: Numeric severity score.
         severity_reasons: Human-readable reasons contributing to severity.
         retrieved_evidence: Ranked evidence chunks from the knowledge base.
+        summary: Generated triage summary and recommended next steps.
     """
 
     request_id: str
@@ -93,6 +107,7 @@ class TriageResponse(BaseModel):
     severity_score: int
     severity_reasons: list[str]
     retrieved_evidence: list[RetrievedEvidenceResponse]
+    summary: TriageSummaryResponse
 
 
 class TriageHistoryResponse(BaseModel):
@@ -330,6 +345,10 @@ def triage_ticket(request: TriageRequest) -> TriageResponse:
             )
             for evidence in result.retrieved_evidence
         ],
+        summary=TriageSummaryResponse(
+            summary_text=result.summary.summary_text,
+            recommended_next_steps=result.summary.recommended_next_steps,
+        ),
     )
 
     try:

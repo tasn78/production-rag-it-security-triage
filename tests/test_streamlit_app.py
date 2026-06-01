@@ -21,6 +21,13 @@ def test_build_triage_report_includes_core_triage_fields() -> None:
             "Base severity score applied.",
             "Security alert category increases severity.",
         ],
+        "summary": {
+            "summary_text": ("This ticket was classified as Security Alert with High severity."),
+            "recommended_next_steps": [
+                "Review the top retrieved knowledge-base source: nginx_security.md.",
+                "Check logs for repeated failures.",
+            ],
+        },
         "retrieved_evidence": [
             {
                 "rank": 1,
@@ -41,6 +48,11 @@ def test_build_triage_report_includes_core_triage_fields() -> None:
     assert "- Category: Security Alert" in report
     assert "- Severity: High" in report
     assert "- Severity Score: 7" in report
+    assert "## Generated Triage Summary" in report
+    assert "This ticket was classified as Security Alert with High severity." in report
+    assert "## Recommended Next Steps" in report
+    assert "- Review the top retrieved knowledge-base source: nginx_security.md." in report
+    assert "- Check logs for repeated failures." in report
     assert "external ip" in report
     assert "- Base severity score applied." in report
     assert "### Rank 1: nginx_security.md" in report

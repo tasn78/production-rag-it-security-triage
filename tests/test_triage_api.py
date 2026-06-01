@@ -19,6 +19,7 @@ from app.triage.schemas import (
     TriageCategory,
 )
 from app.triage.service import TriageResult
+from app.triage.summary import TriageSummary
 
 
 @dataclass
@@ -61,6 +62,14 @@ class FakeTriageService:
                     rank=1,
                 )
             ][:top_k],
+            summary=TriageSummary(
+                summary_text=(
+                    "This ticket was classified as Web Server / Nginx with High Severity."
+                ),
+                recommended_next_steps=[
+                    "Review the top retrieved knowledge-base source: nginx_security.md"
+                ],
+            ),
         )
 
 

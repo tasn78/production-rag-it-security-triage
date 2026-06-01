@@ -12,6 +12,7 @@ from app.rag.retriever import KnowledgeBaseRetriever, RetrievalResult
 from app.triage.classifier import classify_ticket
 from app.triage.schemas import ClassificationResult, SeverityResult
 from app.triage.severity import calculate_severity
+from app.triage.summary import TriageSummary, generate_triage_summary
 
 
 @dataclass(frozen=True)
@@ -24,12 +25,14 @@ class TriageResult:
         classification: Category classification result.
         severity: Severity scoring result.
         retrieved_evidence: Ranked knowledge base chunks relevant to the ticket.
+        summary: Generated triage summary and recommended next steps.
     """
 
     ticket_text: str
     classification: ClassificationResult
     severity: SeverityResult
     retrieved_evidence: list[RetrievalResult]
+    summary: TriageSummary
 
 
 class TriageService:
@@ -78,10 +81,17 @@ class TriageService:
             query_text=ticket_text,
             top_k=top_k,
         )
+        summary = generate_triage_summary(
+            ticket_text=ticket_text,
+            category=classification.category,
+            severity=severity,
+            retrieved_evidence=retrieved_evidence,
+        )
 
         return TriageResult(
             ticket_text=ticket_text,
             classification=classification,
             severity=severity,
             retrieved_evidence=retrieved_evidence,
+            summary=summary,
         )

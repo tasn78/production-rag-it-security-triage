@@ -67,6 +67,8 @@ def build_triage_report(result: dict, ticket_text: str) -> str:
     matched_keywords = result.get("matched_keywords", [])
     severity_reasons = result.get("severity_reasons", [])
     retrieved_evidence = result.get("retrieved_evidence", [])
+    summary = result.get("summary", {})
+    recommended_next_steps = summary.get("recommended_next_steps", [])
 
     report_lines = [
         "# IT and Security Triage Report",
@@ -83,13 +85,30 @@ def build_triage_report(result: dict, ticket_text: str) -> str:
         f"- Severity: {result['severity']}",
         f"- Severity Score: {result['severity_score']}",
         "",
-        "## Matched Keywords",
+        "## Generated Triage Summary",
         "",
-        ", ".join(matched_keywords) if matched_keywords else "No specific keywords matched.",
+        summary.get("summary_text", "No summary returned."),
         "",
-        "## Severity Reasons",
+        "## Recommended Next Steps",
         "",
     ]
+
+    if recommended_next_steps:
+        report_lines.extend(f"- {step}" for step in recommended_next_steps)
+    else:
+        report_lines.append("No recommended next steps returned.")
+
+    report_lines.extend(
+        [
+            "",
+            "## Matched Keywords",
+            "",
+            ", ".join(matched_keywords) if matched_keywords else "No specific keywords matched.",
+            "",
+            "## Severity Reasons",
+            "",
+        ]
+    )
 
     if severity_reasons:
         report_lines.extend(f"- {reason}" for reason in severity_reasons)
@@ -145,6 +164,17 @@ def display_triage_response(result: dict, ticket_text: str) -> None:
 
     with col3:
         st.metric("Severity Score", result["severity_score"])
+
+    summary = result.get("summary", {})
+    if summary:
+        st.subheader("Generated Triage Summary")
+        st.write(summary.get("summary_text", "No summary returned"))
+
+        recommended_next_steps = summary.get("recommended_next_steps", [])
+        if recommended_next_steps:
+            st.write("Recommended Next Steps")
+            for step in recommended_next_steps:
+                st.write(f"- {step}")
 
     st.subheader("Matched Keywords")
     matched_keywords = result.get("matched_keywords", [])
