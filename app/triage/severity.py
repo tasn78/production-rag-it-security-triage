@@ -24,11 +24,14 @@ HIGH_RISK_SECURITY_KEYWORDS = (
 MULTI_USER_IMPACT_KEYWORDS = (
     "multiple users",
     "many users",
+    "several users",
     "all users",
-    "department",
+    "department-wide",
     "company-wide",
     "outage",
     "unavailable",
+    "gateway stopped responding",
+    "stopped responding",
 )
 
 PRIVILEGED_ACCESS_KEYWORDS = (

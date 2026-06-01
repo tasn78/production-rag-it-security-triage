@@ -58,6 +58,11 @@ CATEGORY_KEYWORDS: dict[TriageCategory, tuple[str, ...]] = {
     ),
     TriageCategory.AUTHENTICATION: (
         "password reset",
+        "resetting a forgotten password",
+        "forgotten password",
+        "forgot password",
+        "reset password",
+        "password help",
         "account locked",
         "account lockout",
         "mfa",

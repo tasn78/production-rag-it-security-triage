@@ -6,3 +6,11 @@
 {"ticket_text":"User receives access denied when opening a mapped network drive.","expected_category":"Shared Drive / File Access","expected_severity":"Low","expected_source":"shared_drive_access.md"}
 {"ticket_text":"User account locked after password reset.","expected_category":"Authentication","expected_severity":"Low","expected_source":"password_reset.md"}
 {"ticket_text":"Admin account has repeated failed login attempts.","expected_category":"Security Alert","expected_severity":"Critical","expected_source":"password_reset.md"}
+{"ticket_text":"Nginx logs show repeated 403 responses from the same external IP.","expected_category":"Security Alert","expected_severity":"High","expected_source":"nginx_security.md"}
+{"ticket_text":"Web server rate limiting is triggering repeated 429 responses for suspicious requests.","expected_category":"Security Alert","expected_severity":"High","expected_source":"nginx_security.md"}
+{"ticket_text":"Employee reports VPN connects successfully but shared internal applications are unreachable.","expected_category":"VPN / Network Access","expected_severity":"Low","expected_source":"vpn_troubleshooting.md"}
+{"ticket_text":"Several users cannot connect to VPN after the gateway stopped responding.","expected_category":"VPN / Network Access","expected_severity":"Medium","expected_source":"vpn_troubleshooting.md"}
+{"ticket_text":"User can log in but receives access denied when opening the department shared drive.","expected_category":"Shared Drive / File Access","expected_severity":"Low","expected_source":"shared_drive_access.md"}
+{"ticket_text":"Mapped network drive is missing after the user's password was changed.","expected_category":"Shared Drive / File Access","expected_severity":"Low","expected_source":"shared_drive_access.md"}
+{"ticket_text":"User needs help resetting a forgotten password.","expected_category":"Authentication","expected_severity":"Low","expected_source":"password_reset.md"}
+{"ticket_text":"Privileged admin account is locked after repeated failed authentication attempts.","expected_category":"Security Alert","expected_severity":"Critical","expected_source":"password_reset.md"}
