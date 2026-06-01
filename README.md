@@ -262,7 +262,7 @@ Evaluation currently measures:
 - Retrieval hit@k
 - Top retrieved source accuracy
 
-The evaluation dataset is intentionally small at this stage and is designed to verify the current baseline workflow. Future work will expand the evaluation set with more realistic ticket variations and edge cases.
+The evaluation dataset currently includes 16 labeled IT/security tickets covering security alerts, VPN/network access issues, shared drive access problems, authentication cases, and Nginx/web server events. The evaluation set is used to validate deterministic classification, explainable severity scoring, and retrieval quality as the project expands.
 
 ## Run the Retrieval Demo
 
