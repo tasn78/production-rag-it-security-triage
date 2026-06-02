@@ -100,6 +100,7 @@ Evidence: nginx_security.md
 - [x] API health status display in dashboard
 - [x] Streamlit dashboard history view
 - [x] Downloadable Markdown triage reports
+- [x] Deterministic triage summaries and recommended next steps
 
 ## Planned Features
 - [ ] Optional LLM-generated triage summaries
@@ -312,7 +313,9 @@ POST /triage
   "request_id": "30094c91-f1b3-4b33-875b-76053410fd1d",
   "ticket_text": "Nginx logs show repeated 401 and 429 responses from the same external IP.",
   "category": "Security Alert",
-  "matched_keywords": ["external ip"],
+  "matched_keywords": [
+    "external ip"
+  ],
   "severity": "High",
   "severity_score": 7,
   "severity_reasons": [
@@ -328,7 +331,16 @@ POST /triage
       "score": 0.7079,
       "rank": 1
     }
-  ]
+  ],
+  "summary": {
+    "summary_text": "This ticket was classified as Security Alert with High severity based on the submitted issue text and supporting evidence from nginx_security.md.",
+    "recommended_next_steps": [
+      "Review the top retrieved knowledge-base source: nginx_security.md.",
+      "Validate the ticket details against the matched keywords and severity reasons.",
+      "Check logs for repeated failures, suspicious source IPs, and escalation indicators.",
+      "Escalate if the issue affects multiple users or privileged access."
+    ]
+  }
 }
 ```
 
