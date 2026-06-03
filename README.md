@@ -434,6 +434,20 @@ After starting Docker Compose, open:
 http://127.0.0.1:8501
 ```
 
+## Screenshots
+
+### Streamlit Triage Result
+
+![Streamlit Triage Result](docs/screenshots/streamlit-triage-result.png)
+
+### Feedback Summary and Triage History
+
+![Feedback Summary and Triage History](docs/screenshots/streamlit-feedback-history.png)
+
+### FastAPI Documentation
+
+![FastAPI Documentation](docs/screenshots/fastapi-docs.png)
+
 ## Example Demo Results
 
 ```text
