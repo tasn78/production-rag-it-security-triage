@@ -4,7 +4,31 @@ Unit tests for Streamlit dashboard helper functions.
 These tests cover pure helper logic without launching the Streamlit app.
 """
 
-from frontend.streamlit_app import build_triage_report
+import pytest
+
+from frontend.streamlit_app import build_api_headers, build_triage_report
+
+
+def test_build_api_headers_returns_empty_dict_without_api_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Verify that dashboard API headers are empty when no API key is configured.
+    """
+    monkeypatch.setattr("frontend.streamlit_app.TRIAGE_API_KEY", "")
+
+    assert build_api_headers() == {}
+
+
+def test_build_api_headers_returns_api_key_header(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Verify that dashboard API headers include X-API-Key when configured.
+    """
+    monkeypatch.setattr("frontend.streamlit_app.TRIAGE_API_KEY", "dev-secret-key")
+
+    assert build_api_headers() == {"X-API-Key": "dev-secret-key"}
 
 
 def test_build_triage_report_includes_core_triage_fields() -> None:

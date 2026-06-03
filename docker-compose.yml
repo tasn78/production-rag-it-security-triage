@@ -10,6 +10,7 @@ services:
       - ENVIRONMENT=development
       - EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
       - DOCS_PATH=data/docs
+      - TRIAGE_API_KEY=${TRIAGE_API_KEY:-}
     volumes:
       - ./data/log:/app/data/log
 
@@ -22,6 +23,7 @@ services:
       - "8501:8501"
     environment:
       - API_BASE_URL=http://triage-api:8000
+      - TRIAGE_API_KEY=${TRIAGE_API_KEY:-}
     command: streamlit run frontend/streamlit_app.py --server.address 0.0.0.0 --server.port 8501
     depends_on:
       - triage-api

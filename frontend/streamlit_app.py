@@ -11,8 +11,22 @@ import requests
 import streamlit as st
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+TRIAGE_API_KEY = os.getenv("TRIAGE_API_KEY", "").strip()
 
 DEFAULT_TICKET_TEXT = "Nginx logs show repeated 401 and 429 responses from the same external IP."
+
+
+def build_api_headers() -> dict[str, str]:
+    """
+    Build optional API headers for FastAPI requests.
+
+    Returns:
+        Request headers containing X-API-Key when configured.
+    """
+    if not TRIAGE_API_KEY:
+        return {}
+
+    return {"X-API-Key": TRIAGE_API_KEY}
 
 
 def run_triage_request(ticket_text: str, top_k: int) -> dict:
@@ -28,6 +42,7 @@ def run_triage_request(ticket_text: str, top_k: int) -> dict:
     """
     response = requests.post(
         f"{API_BASE_URL}/triage",
+        headers=build_api_headers(),
         json={
             "ticket_text": ticket_text,
             "top_k": top_k,
@@ -224,6 +239,7 @@ def get_triage_history(limit: int = 10) -> list[dict[str, object]]:
     """
     response = requests.get(
         f"{API_BASE_URL}/triage/history",
+        headers=build_api_headers(),
         params={"limit": limit},
         timeout=30,
     )
@@ -243,6 +259,7 @@ def get_feedback_summary(recent_limit: int = 10) -> dict[str, object]:
     """
     response = requests.get(
         f"{API_BASE_URL}/triage/feedback/summary",
+        headers=build_api_headers(),
         params={"recent_limit": recent_limit},
         timeout=30,
     )
@@ -272,6 +289,7 @@ def submit_triage_feedback(
     """
     response = requests.post(
         f"{API_BASE_URL}/triage/feedback",
+        headers=build_api_headers(),
         json={
             "request_id": request_id,
             "ticket_text": ticket_text,
