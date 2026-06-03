@@ -7,6 +7,7 @@ without loading a real embedding model or FAISS index.
 
 from dataclasses import dataclass
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.api import routes_triage
@@ -193,6 +194,20 @@ def test_health_check_returns_ok() -> None:
     }
 
 
+def test_health_check_remains_public_when_api_key_is_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Verify that the health endpoint remains public when API key auth is enabled.
+    """
+    monkeypatch.setenv("TRIAGE_API_KEY", "dev-secret-key")
+    client = TestClient(create_app())
+
+    response = client.get("/health")
+
+    assert response.status_code == 200
+
+
 def test_triage_endpoint_returns_structured_result() -> None:
     """
     Verify that the triage endpoint returns category, severity, and evidence.
@@ -240,6 +255,41 @@ def test_triage_endpoint_returns_structured_result() -> None:
                 "retrieved_sources": ["nginx_security.md"],
             }
         ]
+
+    finally:
+        routes_triage.service_provider = original_provider
+        routes_triage.request_logger = original_request_logger
+
+
+def test_triage_endpoint_allows_correct_api_key_when_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Verify that the triage endpoint accepts a valid API key when auth is enabled.
+    """
+    monkeypatch.setenv("TRIAGE_API_KEY", "dev-secret-key")
+
+    original_provider = routes_triage.service_provider
+    original_request_logger = routes_triage.request_logger
+    fake_request_logger = FakeRequestLogger(records=[])
+
+    routes_triage.service_provider = FakeServiceProvider()
+    routes_triage.request_logger = fake_request_logger
+
+    try:
+        client = TestClient(create_app())
+
+        response = client.post(
+            "/triage",
+            headers={"X-API-Key": "dev-secret-key"},
+            json={
+                "ticket_text": "Nginx logs show repeated 401 and 429 responses.",
+                "top_k": 1,
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["category"] == "Web Server / Nginx"
 
     finally:
         routes_triage.service_provider = original_provider
@@ -457,3 +507,46 @@ def test_triage_feedback_summary_endpoint_rejects_invalid_limit() -> None:
 
     finally:
         routes_triage.feedback_logger = original_logger
+
+
+def test_triage_endpoint_rejects_missing_api_key_when_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Verify that the triage endpoint rejects requests without an API key when enabled.
+    """
+    monkeypatch.setenv("TRIAGE_API_KEY", "dev-secret-key")
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/triage",
+        json={
+            "ticket_text": "Nginx logs show repeated 401 responses.",
+            "top_k": 1,
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid or missing API key."
+
+
+def test_triage_endpoint_rejects_wrong_api_key_when_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Verify that the triage endpoint rejects an incorrect API key.
+    """
+    monkeypatch.setenv("TRIAGE_API_KEY", "dev-secret-key")
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/triage",
+        headers={"X-API-Key": "wrong-key"},
+        json={
+            "ticket_text": "Nginx logs show repeated 401 responses.",
+            "top_k": 1,
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid or missing API key."

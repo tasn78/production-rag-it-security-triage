@@ -10,9 +10,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from app.api.security import require_api_key
 from app.rag.retriever import KnowledgeBaseRetriever
 from app.triage.feedback_logger import TriageFeedbackLogger
 from app.triage.request_logger import TriageRequestLogger
@@ -225,7 +226,11 @@ request_logger = TriageRequestLogger(log_file_path=DEFAULT_LOG_FILE_PATH)
 feedback_logger = TriageFeedbackLogger(log_file_path=DEFAULT_FEEDBACK_LOG_FILE_PATH)
 
 
-@router.get("/history", response_model=TriageHistoryResponse)
+@router.get(
+    "/history",
+    response_model=TriageHistoryResponse,
+    dependencies=[Depends(require_api_key)],
+)
 def get_triage_history(limit: int = 10) -> TriageHistoryResponse:
     """
     Return recent triage request history.
@@ -249,7 +254,11 @@ def get_triage_history(limit: int = 10) -> TriageHistoryResponse:
     return TriageHistoryResponse(records=records)
 
 
-@router.post("/feedback", response_model=TriageFeedbackResponse)
+@router.post(
+    "/feedback",
+    response_model=TriageFeedbackResponse,
+    dependencies=[Depends(require_api_key)],
+)
 def submit_triage_feedback(request: TriageFeedbackRequest) -> TriageFeedbackResponse:
     """
     Record user feedback for a triage result.
@@ -278,7 +287,11 @@ def submit_triage_feedback(request: TriageFeedbackRequest) -> TriageFeedbackResp
     return TriageFeedbackResponse(status="recorded")
 
 
-@router.get("/feedback/summary", response_model=TriageFeedbackSummaryResponse)
+@router.get(
+    "/feedback/summary",
+    response_model=TriageFeedbackSummaryResponse,
+    dependencies=[Depends(require_api_key)],
+)
 def get_triage_feedback_summary(recent_limit: int = 10) -> TriageFeedbackSummaryResponse:
     """
     Return summary statistics for triage feedback.
@@ -302,7 +315,11 @@ def get_triage_feedback_summary(recent_limit: int = 10) -> TriageFeedbackSummary
     return TriageFeedbackSummaryResponse(**summary)
 
 
-@router.post("", response_model=TriageResponse)
+@router.post(
+    "",
+    response_model=TriageResponse,
+    dependencies=[Depends(require_api_key)],
+)
 def triage_ticket(request: TriageRequest) -> TriageResponse:
     """
     Triage an IT support ticket or security alert.
