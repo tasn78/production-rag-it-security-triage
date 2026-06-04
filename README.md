@@ -17,6 +17,7 @@ This project demonstrates practical AI engineering and backend software developm
 - Explainable severity scoring
 - FastAPI backend development
 - Structured API responses
+- Optional API key protection for protected routes
 - Unit testing with pytest
 - Ruff linting and formatting
 - Docker-based backend execution
@@ -101,13 +102,16 @@ Evidence: nginx_security.md
 - [x] Streamlit dashboard history view
 - [x] Downloadable Markdown triage reports
 - [x] Deterministic triage summaries and recommended next steps
+- [x] Expanded evaluation dataset with 16 labeled examples
+- [x] Project screenshots for dashboard and API documentation
+- [x] Optional API key protection for triage routes
+- [x] Dashboard support for authenticated API requests
 
 ## Planned Features
 - [ ] Optional LLM-generated triage summaries
 - [ ] Cloud deployment
-- [ ] Expanded evaluation dataset
-- [ ] More polished dashboard styling and screenshots
-- [ ] Authentication or role-based access control
+- [ ] Larger and more diverse evaluation dataset
+- [ ] Role-based access control with user roles
 
 ## Engineering Standards
 
@@ -129,7 +133,8 @@ This project follows production-oriented Python software practices:
 ```text
 app/
 ├── api/
-│   └── routes_triage.py        # FastAPI triage route
+│   ├── routes_triage.py        # FastAPI triage route
+│   └── security.py             # Optional API key authentication dependency
 ├── evaluation/
 │   ├── evaluation_schemas.py   # Evaluation data structures
 │   └── evaluator.py            # Evaluation metric calculations
@@ -146,7 +151,8 @@ app/
 │   ├── request_logger.py       # JSONL request history logging
 │   ├── schemas.py              # Shared triage domain types
 │   ├── service.py              # Triage workflow orchestration
-│   └── severity.py             # Explainable severity scoring
+│   ├── severity.py             # Explainable severity scoring
+│   └── summary.py              # Deterministic summary and next-step generation
 └── main.py                     # FastAPI application entry point
 
 frontend/
@@ -208,6 +214,10 @@ At the current milestone, the test suite covers:
 - Feedback submission endpoint
 - Feedback summary endpoint
 - Request ID tracking
+- Optional API key authentication
+- Dashboard API header generation
+- Deterministic triage summaries
+- Downloadable Markdown report generation
 
 ## Code Quality Checks
 
@@ -396,19 +406,49 @@ Stop the running services with `Ctrl + C`, then remove containers and network:
 docker compose down
 ```
 
-## GitHub Actions CI
+## Optional API Key Protection
 
-This repository includes a GitHub Actions workflow that runs on pushes and pull requests to `main`.
+The API supports optional API key protection for triage-related endpoints. Authentication is disabled by default for local development. If the `TRIAGE_API_KEY` environment variable is set, protected endpoints require the same value in the `X-API-Key` request header.
 
-The CI workflow runs:
+Protected endpoints:
 
 ```text
-ruff check .
-ruff format --check .
-pytest
+POST /triage
+GET  /triage/history
+POST /triage/feedback
+GET  /triage/feedback/summary
 ```
 
-This helps verify that code remains linted, formatted, and tested before changes are merged or shared.
+Public endpoint:
+
+```text
+GET /health
+```
+
+Run in open local-development mode:
+
+```powershell
+docker compose up --build
+```
+
+Run in protected mode:
+
+```powershell
+$env:TRIAGE_API_KEY="dev-secret-key"
+docker compose up --build
+```
+
+Example protected API request:
+
+```powershell
+Invoke-RestMethod -Method Post `
+  -Uri http://localhost:8000/triage `
+  -Headers @{"X-API-Key"="dev-secret-key"} `
+  -ContentType "application/json" `
+  -Body '{"ticket_text":"Nginx logs show repeated 401 responses.","top_k":1}'
+```
+
+The Streamlit dashboard automatically sends the `X-API-Key` header when `TRIAGE_API_KEY` is configured.
 
 ## Streamlit Dashboard
 
