@@ -38,9 +38,26 @@ data/log/
 data/vector_store/
 data/processed/
 data/artifacts/
+data/splits/
+data/ml/
 *.faiss
 *.index
 *.pkl
+*.joblib
+*.onnx
+
+# External/raw datasets
+data/raw/*
+!data/raw/.gitkeep
+data/external/
+
+# Generated ML training datasets
+data/training/*
+!data/training/.gitkeep
+
+# Trained ML model artifacts
+models/*
+!models/.gitkeep
 
 # OS files
 .DS_Store

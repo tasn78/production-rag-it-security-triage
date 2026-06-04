@@ -108,10 +108,12 @@ Evidence: nginx_security.md
 - [x] Dashboard support for authenticated API requests
 
 ## Planned Features
+- [ ] ML-based ticket category and severity prediction using mapped public support datasets
 - [ ] Optional LLM-generated triage summaries
 - [ ] Cloud deployment
 - [ ] Larger and more diverse evaluation dataset
 - [ ] Role-based access control with user roles
+- [ ] SLA risk and resolution-time prediction using structured incident metadata
 
 ## Engineering Standards
 
