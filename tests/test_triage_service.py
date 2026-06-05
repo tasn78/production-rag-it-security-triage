@@ -10,8 +10,49 @@ from dataclasses import dataclass
 import pytest
 
 from app.rag.retriever import RetrievalResult
-from app.triage.schemas import SeverityLevel, TriageCategory
+from app.triage.schemas import ClassificationResult, SeverityLevel, TriageCategory
 from app.triage.service import TriageResult, TriageService
+
+
+class FakeAvailableMLClassifier:
+    """
+    Fake available ML classifier for testing service integration.
+    """
+
+    @property
+    def is_available(self) -> bool:
+        """
+        Return that the fake ML classifier is available.
+        """
+        return True
+
+    def predict(self, ticket_text: str) -> ClassificationResult:
+        """
+        Return a deterministic ML classification.
+        """
+        return ClassificationResult(
+            category=TriageCategory.SHARED_DRIVE_ACCESS,
+            matched_keywords=[],
+        )
+
+
+class FakeFailingMLClassifier:
+    """
+    Fake ML classifier that fails during prediction.
+    """
+
+    @property
+    def is_available(self) -> bool:
+        """
+        Return that the fake ML classifier is available.
+        """
+        return True
+
+    def predict(self, ticket_text: str) -> ClassificationResult:
+        """
+        Raise an error to verify rule-based fallback.
+        """
+        raise RuntimeError("model failure")
 
 
 @dataclass
@@ -121,3 +162,41 @@ def test_triage_service_requires_ready_retriever() -> None:
 
     with pytest.raises(RuntimeError, match="retriever index has not been built"):
         service.triage_ticket(ticket_text="Nginx 401 errors", top_k=1)
+
+
+def test_triage_service_uses_injected_ml_classifier_when_available() -> None:
+    """
+    Verify that the triage service uses an injected available ML classifier.
+    """
+    retriever = FakeRetriever()
+    service = TriageService(
+        retriever=retriever,
+        ml_classifier=FakeAvailableMLClassifier(),
+    )
+
+    result = service.triage_ticket(
+        ticket_text="Nginx logs show repeated HTTP 429 responses.",
+        top_k=1,
+    )
+
+    assert result.classification.category == TriageCategory.SHARED_DRIVE_ACCESS
+    assert result.classification.matched_keywords == []
+
+
+def test_triage_service_falls_back_to_rules_when_ml_classifier_fails() -> None:
+    """
+    Verify that the triage service falls back to rule-based classification.
+    """
+    retriever = FakeRetriever()
+    service = TriageService(
+        retriever=retriever,
+        ml_classifier=FakeFailingMLClassifier(),
+    )
+
+    result = service.triage_ticket(
+        ticket_text="Nginx logs show repeated 401 and 429 responses.",
+        top_k=1,
+    )
+
+    assert result.classification.category == TriageCategory.WEB_SERVER
+    assert "nginx" in result.classification.matched_keywords

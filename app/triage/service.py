@@ -8,6 +8,8 @@ routes so the workflow can be tested independently.
 
 from dataclasses import dataclass
 
+from app.config import ML_CATEGORY_MODEL_PATH, USE_ML_CLASSIFIER
+from app.ml.category_classifier import MLCategoryClassifier
 from app.rag.retriever import KnowledgeBaseRetriever, RetrievalResult
 from app.triage.classifier import classify_ticket
 from app.triage.schemas import ClassificationResult, SeverityResult
@@ -44,14 +46,57 @@ class TriageService:
     index before processing requests.
     """
 
-    def __init__(self, retriever: KnowledgeBaseRetriever) -> None:
+    def __init__(
+        self,
+        retriever: KnowledgeBaseRetriever,
+        ml_classifier: MLCategoryClassifier | None = None,
+    ) -> None:
         """
         Initialize the triage service.
 
         Args:
             retriever: Built knowledge base retriever used for evidence retrieval.
+            ml_classifier: Optional ML classifier used for category prediction.
         """
         self._retriever = retriever
+        self._ml_classifier = ml_classifier or self._build_ml_classifier()
+
+    def _build_ml_classifier(self) -> MLCategoryClassifier | None:
+        """
+        Build and load the optional ML classifier when enabled.
+
+        Returns:
+            Loaded ML classifier when enabled and available, otherwise None.
+        """
+        if not USE_ML_CLASSIFIER:
+            return None
+
+        classifier = MLCategoryClassifier(model_path=ML_CATEGORY_MODEL_PATH)
+
+        try:
+            classifier.load()
+        except (FileNotFoundError, OSError, ValueError):
+            return None
+
+        return classifier
+
+    def _classify_ticket(self, ticket_text: str) -> ClassificationResult:
+        """
+        Classify a ticket using ML when available, otherwise rule-based logic.
+
+        Args:
+            ticket_text: Raw ticket, alert, or issue description.
+
+        Returns:
+            ClassificationResult from ML or rule-based classification.
+        """
+        if self._ml_classifier is not None and self._ml_classifier.is_available:
+            try:
+                return self._ml_classifier.predict(ticket_text)
+            except (RuntimeError, ValueError):
+                pass
+
+        return classify_ticket(ticket_text)
 
     def triage_ticket(
         self,
@@ -72,7 +117,7 @@ class TriageService:
             ValueError: If ticket_text is empty or top_k is invalid.
             RuntimeError: If the retriever index has not been built.
         """
-        classification = classify_ticket(ticket_text)
+        classification = self._classify_ticket(ticket_text)
         severity = calculate_severity(
             ticket_text=ticket_text,
             category=classification.category,
