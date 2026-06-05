@@ -277,6 +277,85 @@ Evaluation currently measures:
 
 The evaluation dataset currently includes 16 labeled IT/security tickets covering security alerts, VPN/network access issues, shared drive access problems, authentication cases, and Nginx/web server events. The evaluation set is used to validate deterministic classification, explainable severity scoring, and retrieval quality as the project expands.
 
+## Training Data
+
+The planned ML classifier uses a hybrid training-data strategy that combines public support-ticket datasets with clearly labeled synthetic examples for underrepresented IT and security categories. The goal is to train and evaluate ticket classification and severity prediction models while keeping data provenance transparent.
+
+Raw datasets are stored locally under:
+
+```text
+data/raw/
+```
+
+Raw external datasets are not committed to the repository. Generated training previews and model artifacts are also kept local and excluded from Git.
+
+### Data Sources
+
+#### Kaggle IT Support Ticket Dataset
+
+The Kaggle IT Support Ticket Dataset provides labeled support-ticket records with ticket body text, department labels, priority labels, and tags. It is used as the primary public text source for early ticket-category and severity-model exploration.
+
+Source:
+
+```text
+https://www.kaggle.com/datasets/suraj520/customer-support-ticket-dataset
+```
+
+#### Mendeley Help Desk Tickets
+
+The Mendeley Help Desk Tickets dataset contains anonymized enterprise helpdesk data from an international software company, covering tickets reported between January 2016 and March 2023. It includes issue workflow data, priorities, resolution timing, and a curated sample of reporter/helpdesk utterances.
+
+For this project, the reporter utterances are used selectively for text-classification exploration after filtering for public reporter messages. The structured issue data is also useful for future workflow and resolution-time modeling.
+
+Source:
+
+```text
+https://data.mendeley.com/datasets/btm76zndnt/2
+```
+
+#### UCI ServiceNow Incident Management Event Log
+
+The UCI ServiceNow Incident Management Event Log contains 141,712 event records covering 24,918 real incidents extracted from a ServiceNow platform used by an IT company. This dataset is not used for text classification because it does not include free-text ticket descriptions.
+
+Instead, it is a strong candidate for a later structured ML feature, such as SLA-risk prediction, reassignment-risk prediction, or resolution-time prediction using incident metadata such as priority, impact, urgency, assignment group, reassignment count, and SLA status.
+
+Source:
+
+```text
+https://archive.ics.uci.edu/dataset/498/incident+management+process+enriched+event+log
+```
+
+### Synthetic Augmentation
+
+Some target categories are underrepresented or missing in the available public text datasets, especially:
+
+- `Shared Drive / File Access`
+- `Web Server / Nginx`
+
+Synthetic examples will be added only to improve coverage for these underrepresented IT/security categories. Synthetic rows will be clearly marked with:
+
+```text
+is_synthetic: true
+```
+
+This keeps the training data honest and makes it clear which examples came from public datasets and which were generated for class-balance and coverage purposes.
+
+### Data Exploration
+
+The data exploration and label-mapping logic is implemented in:
+
+```text
+scripts/explore_training_sources.py
+```
+
+The script inspects local raw datasets, filters usable text, maps source examples into the project’s target triage categories, prints class distributions, prints sample examples for manual label review, and exports a local mapped training preview to:
+
+```text
+data/training/mapped_training_preview.csv
+```
+
+The mapped preview file is generated locally and is not committed to Git.
+
 ## Run the Retrieval Demo
 
 ```powershell
