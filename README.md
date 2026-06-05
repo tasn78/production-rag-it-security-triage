@@ -106,9 +106,12 @@ Evidence: nginx_security.md
 - [x] Project screenshots for dashboard and API documentation
 - [x] Optional API key protection for triage routes
 - [x] Dashboard support for authenticated API requests
+- [x] ML training dataset builder
+- [x] Baseline ML category classifier training script
+- [x] Optional ML category classifier integration
 
 ## Planned Features
-- [ ] ML-based ticket category and severity prediction using mapped public support datasets
+- [ ] ML-based severity prediction using mapped public support datasets
 - [ ] Optional LLM-generated triage summaries
 - [ ] Cloud deployment
 - [ ] Larger and more diverse evaluation dataset
@@ -220,6 +223,8 @@ At the current milestone, the test suite covers:
 - Dashboard API header generation
 - Deterministic triage summaries
 - Downloadable Markdown report generation
+- Optional ML category classifier integration
+- ML classifier fallback to rule-based classification
 
 ## Code Quality Checks
 
@@ -355,6 +360,87 @@ data/training/mapped_training_preview.csv
 ```
 
 The mapped preview file is generated locally and is not committed to Git.
+
+## ML Category Classifier
+
+The project supports an optional ML-based ticket category classifier. By default, the application uses the deterministic rule-based classifier. ML classification can be enabled after building the local training dataset and training a model.
+
+The ML classifier is trained from the generated local training dataset:
+
+```text
+data/training/category_training_set.csv
+```
+
+Model artifacts are written under:
+
+```text
+models/
+```
+
+Model artifacts are not committed to Git. To use ML mode, train the model locally first.
+
+Build the training dataset:
+
+```powershell
+python -m scripts.build_training_dataset
+```
+
+Train the current best-performing baseline model:
+
+```powershell
+python -m scripts.train_category_classifier --model svm --output models/category_classifier.joblib
+```
+
+The training script currently supports:
+
+```text
+lr
+svm
+```
+
+Initial local model comparison:
+
+```text
+TF-IDF + Logistic Regression
+accuracy:    0.8229
+macro_f1:    0.8557
+weighted_f1: 0.8219
+
+TF-IDF + Linear SVM
+accuracy:    0.9070
+macro_f1:    0.9307
+weighted_f1: 0.9069
+```
+
+The Linear SVM model currently performs best overall, but it does not provide native probability estimates. Logistic Regression remains useful when probability-based confidence scores are needed.
+
+Enable ML classification locally:
+
+```powershell
+$env:USE_ML_CLASSIFIER="true"
+uvicorn app.main:app --reload
+```
+
+Optional custom model path:
+
+```powershell
+$env:ML_CATEGORY_MODEL_PATH="models/category_classifier.joblib"
+```
+
+Run Docker Compose with ML classification enabled:
+
+```powershell
+$env:USE_ML_CLASSIFIER="true"
+docker compose up --build
+```
+
+The Docker Compose setup mounts the local `models/` directory into the API container so the trained model can be loaded from:
+
+```text
+/app/models/category_classifier.joblib
+```
+
+If ML mode is enabled but the model file is missing or cannot be loaded, the application falls back to the rule-based classifier.
 
 ## Run the Retrieval Demo
 
@@ -605,4 +691,4 @@ Retrieved Evidence:
 
 Many organizations receive repetitive IT tickets and security alerts that require fast, consistent triage. This project shows how retrieval, classification, severity scoring, and backend API design can be combined into a practical AI-assisted workflow.
 
-The system is intentionally built with deterministic baseline logic first. This makes the workflow explainable, testable, and auditable before adding optional LLM-generated summaries or more advanced automation.
+The system is intentionally built with deterministic baseline logic first. This makes the workflow explainable, testable, and auditable before adding optional ML classification, LLM-generated summaries, or more advanced automation.

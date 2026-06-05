@@ -11,8 +11,11 @@ services:
       - EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
       - DOCS_PATH=data/docs
       - TRIAGE_API_KEY=${TRIAGE_API_KEY:-}
+      - USE_ML_CLASSIFIER=${USE_ML_CLASSIFIER:-false}
+      - ML_CATEGORY_MODEL_PATH=${ML_CATEGORY_MODEL_PATH:-/app/models/category_classifier.joblib}
     volumes:
       - ./data/log:/app/data/log
+      - ./models:/app/models
 
   streamlit-dashboard:
     build:
