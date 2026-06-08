@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import pytest
 
 from app.rag.retriever import RetrievalResult
-from app.triage.schemas import ClassificationResult, SeverityLevel, TriageCategory
+from app.triage.schemas import ClassificationResult, ClassifierMode, SeverityLevel, TriageCategory
 from app.triage.service import TriageResult, TriageService
 
 
@@ -113,6 +113,7 @@ def test_triage_service_returns_structured_security_result() -> None:
 
     assert isinstance(result, TriageResult)
     assert result.classification.category == TriageCategory.SECURITY_ALERT
+    assert result.classifier_mode == ClassifierMode.RULE_BASED
     assert result.severity.severity in {SeverityLevel.HIGH, SeverityLevel.CRITICAL}
     assert len(result.retrieved_evidence) == 1
     assert result.retrieved_evidence[0].source_name == "nginx_security.md"
@@ -181,6 +182,7 @@ def test_triage_service_uses_injected_ml_classifier_when_available() -> None:
 
     assert result.classification.category == TriageCategory.SHARED_DRIVE_ACCESS
     assert result.classification.matched_keywords == []
+    assert result.classifier_mode == ClassifierMode.ML
 
 
 def test_triage_service_falls_back_to_rules_when_ml_classifier_fails() -> None:
@@ -200,3 +202,4 @@ def test_triage_service_falls_back_to_rules_when_ml_classifier_fails() -> None:
 
     assert result.classification.category == TriageCategory.WEB_SERVER
     assert "nginx" in result.classification.matched_keywords
+    assert result.classifier_mode == ClassifierMode.ML_FALLBACK_RULE_BASED

@@ -97,6 +97,7 @@ class TriageResponse(BaseModel):
         severity_score: Numeric severity score.
         severity_reasons: Human-readable reasons contributing to severity.
         retrieved_evidence: Ranked evidence chunks from the knowledge base.
+        classifier_mode: Classifier path used for category prediction.
         summary: Generated triage summary and recommended next steps.
     """
 
@@ -108,6 +109,7 @@ class TriageResponse(BaseModel):
     severity_score: int
     severity_reasons: list[str]
     retrieved_evidence: list[RetrievedEvidenceResponse]
+    classifier_mode: str
     summary: TriageSummaryResponse
 
 
@@ -362,6 +364,7 @@ def triage_ticket(request: TriageRequest) -> TriageResponse:
             )
             for evidence in result.retrieved_evidence
         ],
+        classifier_mode=result.classifier_mode.value,
         summary=TriageSummaryResponse(
             summary_text=result.summary.summary_text,
             recommended_next_steps=result.summary.recommended_next_steps,

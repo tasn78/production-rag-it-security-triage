@@ -15,6 +15,7 @@ from app.main import create_app
 from app.rag.retriever import RetrievalResult
 from app.triage.schemas import (
     ClassificationResult,
+    ClassifierMode,
     SeverityLevel,
     SeverityResult,
     TriageCategory,
@@ -71,6 +72,7 @@ class FakeTriageService:
                     "Review the top retrieved knowledge-base source: nginx_security.md"
                 ],
             ),
+            classifier_mode=ClassifierMode.RULE_BASED,
         )
 
 
@@ -239,6 +241,7 @@ def test_triage_endpoint_returns_structured_result() -> None:
         assert request_id
 
         assert payload["category"] == "Web Server / Nginx"
+        assert payload["classifier_mode"] == "rule_based"
         assert payload["severity"] == "High"
         assert payload["severity_score"] == 5
         assert payload["matched_keywords"] == ["nginx", "401", "429"]
@@ -289,7 +292,11 @@ def test_triage_endpoint_allows_correct_api_key_when_configured(
         )
 
         assert response.status_code == 200
-        assert response.json()["category"] == "Web Server / Nginx"
+
+        payload = response.json()
+
+        assert payload["category"] == "Web Server / Nginx"
+        assert payload["classifier_mode"] == "rule_based"
 
     finally:
         routes_triage.service_provider = original_provider

@@ -47,6 +47,16 @@ class ClassificationResult:
     matched_keywords: list[str]
 
 
+class ClassifierMode(str, Enum):
+    """
+    Supported classifier modes for category prediction.
+    """
+
+    RULE_BASED = "rule_based"
+    ML = "ml"
+    ML_FALLBACK_RULE_BASED = "ml_fallback_rule_based"
+
+
 @dataclass(frozen=True)
 class SeverityResult:
     """
