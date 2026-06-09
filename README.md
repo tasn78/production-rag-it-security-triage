@@ -41,7 +41,7 @@ FastAPI triage request
     ↓
 Unique request_id generation
     ↓
-Rule-based classification
+Rule-based or optional ML classification
     ↓
 Severity scoring
     ↓
@@ -109,6 +109,7 @@ Evidence: nginx_security.md
 - [x] ML training dataset builder
 - [x] Baseline ML category classifier training script
 - [x] Optional ML category classifier integration
+- [x] Classifier mode tracking in API responses
 
 ## Planned Features
 - [ ] ML-based severity prediction using mapped public support datasets
@@ -143,6 +144,8 @@ app/
 ├── evaluation/
 │   ├── evaluation_schemas.py   # Evaluation data structures
 │   └── evaluator.py            # Evaluation metric calculations
+├── ml/
+│   └── category_classifier.py  # Optional ML category classifier wrapper
 ├── rag/
 │   ├── chunking.py             # Text normalization and chunking
 │   ├── document_loader.py      # Local document loading
@@ -224,7 +227,8 @@ At the current milestone, the test suite covers:
 - Deterministic triage summaries
 - Downloadable Markdown report generation
 - Optional ML category classifier integration
-- ML classifier fallback to rule-based classification
+- ML classifier fallback to rule-based classification 
+- Classifier mode tracking in service and API responses
 
 ## Code Quality Checks
 
@@ -440,6 +444,14 @@ The Docker Compose setup mounts the local `models/` directory into the API conta
 /app/models/category_classifier.joblib
 ```
 
+Triage responses include a `classifier_mode` field so users can tell which classification path was used:
+
+```text
+rule_based
+ml
+ml_fallback_rule_based
+```
+
 If ML mode is enabled but the model file is missing or cannot be loaded, the application falls back to the rule-based classifier.
 
 ## Run the Retrieval Demo
@@ -493,6 +505,7 @@ POST /triage
   "matched_keywords": [
     "external ip"
   ],
+  "classifier_mode": "rule_based",
   "severity": "High",
   "severity_score": 7,
   "severity_reasons": [
@@ -545,7 +558,7 @@ Then open a second terminal and run:
 python -m scripts.demo_api_request
 ```
 
-The script sends example triage requests to the local API and prints category, severity, severity reasons, and retrieved evidence.
+The script sends example triage requests to the local API and prints category, classifier mode, severity, severity reasons, and retrieved evidence.
 
 ## Run with Docker Compose
 
@@ -626,6 +639,7 @@ Dashboard features include:
 - Ticket or alert text input
 - Configurable number of retrieved evidence chunks
 - Triage category, severity, and severity score display
+- Classifier mode display for rule-based, ML, or ML fallback classification
 - Matched keywords and severity reasons
 - Retrieved knowledge-base evidence
 - Downloadable Markdown triage report
