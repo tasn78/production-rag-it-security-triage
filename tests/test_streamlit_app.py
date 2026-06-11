@@ -38,6 +38,7 @@ def test_build_triage_report_includes_core_triage_fields() -> None:
     result = {
         "request_id": "test-request-id",
         "category": "Security Alert",
+        "classifier_mode": "ml",
         "severity": "High",
         "severity_score": 7,
         "matched_keywords": ["external ip"],
@@ -70,6 +71,7 @@ def test_build_triage_report_includes_core_triage_fields() -> None:
     assert "Request ID: test-request-id" in report
     assert ticket_text in report
     assert "- Category: Security Alert" in report
+    assert "- Classifier Mode: ML classifier" in report
     assert "- Severity: High" in report
     assert "- Severity Score: 7" in report
     assert "## Generated Triage Summary" in report

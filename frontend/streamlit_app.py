@@ -29,6 +29,25 @@ def build_api_headers() -> dict[str, str]:
     return {"X-API-Key": TRIAGE_API_KEY}
 
 
+def format_classifier_mode(classifier_mode: str) -> str:
+    """
+    Format classifier mode values for dashboard display.
+
+    Args:
+        classifier_mode: Raw classifier mode value returned by the API.
+
+    Returns:
+        Human-readable classifier mode label.
+    """
+    classifier_mode_labels = {
+        "rule_based": "Rule-based",
+        "ml": "ML classifier",
+        "ml_fallback_rule_based": "ML fallback to rule-based",
+    }
+
+    return classifier_mode_labels.get(classifier_mode, classifier_mode or "Unknown")
+
+
 def run_triage_request(ticket_text: str, top_k: int) -> dict:
     """
     Send a triage request to the FastAPI backend.
@@ -83,6 +102,7 @@ def build_triage_report(result: dict, ticket_text: str) -> str:
     severity_reasons = result.get("severity_reasons", [])
     retrieved_evidence = result.get("retrieved_evidence", [])
     summary = result.get("summary", {})
+    classifier_mode = format_classifier_mode(result.get("classifier_mode", ""))
     recommended_next_steps = summary.get("recommended_next_steps", [])
 
     report_lines = [
@@ -97,6 +117,7 @@ def build_triage_report(result: dict, ticket_text: str) -> str:
         "## Triage Summary",
         "",
         f"- Category: {result['category']}",
+        f"- Classifier Mode: {classifier_mode}",
         f"- Severity: {result['severity']}",
         f"- Severity Score: {result['severity_score']}",
         "",
@@ -169,15 +190,21 @@ def display_triage_response(result: dict, ticket_text: str) -> None:
     """
     st.subheader("Triage Summary")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.metric("Category", result["category"])
 
     with col2:
-        st.metric("Severity", result["severity"])
+        st.metric(
+            "Classifier Mode",
+            format_classifier_mode(result.get("classifier_mode", "")),
+        )
 
     with col3:
+        st.metric("Severity", result["severity"])
+
+    with col4:
         st.metric("Severity Score", result["severity_score"])
 
     summary = result.get("summary", {})
