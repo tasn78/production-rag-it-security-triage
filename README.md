@@ -767,6 +767,16 @@ Stop the running services with `Ctrl + C`, then remove containers and network:
 docker compose down
 ```
 
+## Render Deployment
+
+The FastAPI backend can be deployed as a Render web service using `render.yaml`.
+
+The initial Render deployment runs in rule-based classification mode:
+
+```text
+USE_ML_CLASSIFIER=false
+```
+
 ## Optional API Key Protection
 
 The API supports optional API key protection for triage-related endpoints. Authentication is disabled by default for local development. If the `TRIAGE_API_KEY` environment variable is set, protected endpoints require the same value in the `X-API-Key` request header.

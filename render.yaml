@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: production-rag-it-security-triage-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: EMBEDDING_MODEL_NAME
+        value: sentence-transformers/all-MiniLM-L6-v2
+      - key: DOCS_PATH
+        value: data/docs
+      - key: USE_ML_CLASSIFIER
+        value: false
+      - key: ML_CATEGORY_MODEL_PATH
+        value: /app/models/category_classifier.joblib
+      - key: TRIAGE_API_KEY
+        sync: false
