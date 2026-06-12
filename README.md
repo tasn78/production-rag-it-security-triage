@@ -199,6 +199,187 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
+## Environment Variables
+
+Configuration can be copied from `.env.example`:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Common environment variables:
+
+```text
+APP_NAME
+```
+
+Application display name.
+
+```text
+ENVIRONMENT
+```
+
+Runtime environment label, such as `development`.
+
+```text
+EMBEDDING_MODEL_NAME
+```
+
+SentenceTransformer model used to create document and query embeddings.
+
+Default:
+
+```text
+sentence-transformers/all-MiniLM-L6-v2
+```
+
+```text
+VECTOR_STORE_PATH
+```
+
+Local FAISS vector-store path used by the retrieval workflow.
+
+Default:
+
+```text
+data/vector_store/faiss.index
+```
+
+```text
+DOCS_PATH
+```
+
+Path to the local Markdown knowledge-base documents.
+
+Default:
+
+```text
+data/docs
+```
+
+```text
+TRIAGE_API_KEY
+```
+
+Optional API key used to protect triage-related endpoints. Leave blank for open local development.
+
+Protected endpoints require the same value in the `X-API-Key` request header when this variable is set.
+
+```text
+USE_ML_CLASSIFIER
+```
+
+Set to `true` to enable the optional ML category classifier.
+
+A trained model artifact must exist before enabling ML mode.
+
+```text
+ML_CATEGORY_MODEL_PATH
+```
+
+Path to the trained ML category classifier artifact.
+
+For Docker Compose, the default path is:
+
+```text
+/app/models/category_classifier.joblib
+```
+
+For local development, the model is commonly stored at:
+
+```text
+models/category_classifier.joblib
+```
+
+```text
+API_BASE_URL
+```
+
+FastAPI backend URL used by the Streamlit dashboard.
+
+For Docker Compose, use:
+
+```text
+http://triage-api:8000
+```
+
+For local Streamlit with local FastAPI, use:
+
+```text
+http://127.0.0.1:8000
+```
+
+Raw datasets, generated training files, logs, vector-store files, and model artifacts are local-only and excluded from Git.
+
+## Deployment Notes
+
+Before deployment or demo, run the local quality checks:
+
+```powershell
+ruff check .
+ruff format --check .
+pytest
+```
+
+Confirm the API health endpoint works:
+
+```text
+GET /health
+```
+
+For ML mode, confirm the model artifact exists before startup:
+
+```powershell
+Test-Path models\category_classifier.joblib
+```
+
+If `USE_ML_CLASSIFIER=true` and the model cannot be loaded, the application falls back to rule-based classification and reports the classifier path through the `classifier_mode` field.
+
+Classifier modes:
+
+```text
+rule_based
+ml
+ml_fallback_rule_based
+```
+
+Docker Compose runs the project as two services:
+
+```text
+triage-api            FastAPI backend on port 8000
+streamlit-dashboard   Streamlit dashboard on port 8501
+```
+
+Start both services:
+
+```powershell
+docker compose up --build
+```
+
+Check container status:
+
+```powershell
+docker compose ps
+```
+
+Stop and remove containers/network:
+
+```powershell
+docker compose down
+```
+
+Open the FastAPI documentation:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Open the Streamlit dashboard:
+
+```text
+http://127.0.0.1:8501
+```
+
 ## Run Tests
 
 ```powershell
